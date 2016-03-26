@@ -2,7 +2,7 @@
 // Hardware memory.
 
 
-var memSize = 1024;
+var memSize = 1024+(256*256)+1024;
 var mem = new Uint8Array(memSize);
 // Registers
 var hw_r1 = 0;
@@ -20,23 +20,69 @@ var zero_flag = 1<<1;
 
 
 var main = function () {
+	"use strict";
 	//compile();
+
+	initDisplay();
+	//setTimeout(initDisplay,10);
+	//redraw();
 
 	for (var m=0;m<memSize;m++) mem[m]=0;
 
-	displayRegisters();
-	loadTestBinary(6);
+	//displayRegisters();
+	loadTestBinary(10);
 
-	for (var i=0;i<10;i++) {
+	redrawScreen();
+
+	/* timing
+	var t1 = performance.now();
+	for (var j=0;j<1000000;j++) {
 		tick();
-		displayRegisters();
+	}
+	var t2 = performance.now();
+	console.log("Time:" + (t2-t1) +" ms");
+	*/
+
+/*
+	for (var d=0;d<256*50;d++) {
+		for (var i=0;i<50;i++) {
+			tick();
+			//displayRegisters();
+			//setTimeout(tickDisplay,10);
+
+		}
+		requestAnimationFrame(redrawScreen);
+		//setTimeout(tickDisplay,10);
+		//redrawScreen();
+		//redraw();
+	}
+	*/
+
+
+	requestAnimationFrame(draw);
+
+
+	//redrawScreen();
+	//dumpMemory();
+};
+
+function draw() {
+
+	requestAnimationFrame(draw);
+
+	// C64 can do around 20000 CPU cycles per frame.
+	for (var i=0;i<20000;i++) {
+		tick();
 	}
 
-	dumpMemory();
-};
+	//for (var sl=0;sl<10;sl++) tickDisplay();
+	redrawScreen();
+
+}
 
 var tick = function ()
 {
+	"use strict";
 	var instr = mem[hw_pc++];
 	var mapI = findInstructionInMap(instr);
 
@@ -72,7 +118,7 @@ var tick = function ()
 			}
 			if (instr==JMPEQ) {
 				if (getFlag(zero_flag)) hw_pc = getSource(SNW);
-				else hw_pc+=2; // skip word.
+				else hw_pc+=4; // skip word.
 			}
 			break;
 		case PUB: pushByte(getSource(iOp1)); break;
@@ -80,14 +126,48 @@ var tick = function ()
 		case POB: setTarget(iOp1,popByte()); break;
 		case POW: setTarget(iOp1,popWord()); break;
 		case ADD: setTarget(iOp1,(getSource(iOp1)+getSource(iOp2))&0xffff); break;
+		case SYS: sysCall(getSource(iOp1)); break;
 	}
 };
 
+
 var findInstructionInMap = function (pInst) {
+	/*
+	// 100000 iterations took 643ms
 	for (var i = 0 ; i < instructionMap.length;i++) {
 		if (instructionMap[i][0] == pInst) return i;
+	}*/
+
+	// 100000 iterations took 603ms
+	/*
+	for (var i = 0 ; i < quickLookup.length;i++) {
+		if (quickLookup[i] == pInst) return i;
+	}*/
+
+	/* binary search 660ms
+	span=instructionMapLength>>2;
+	pos=span;
+	timeOut =0;
+	value=0;
+	while (timeOut<10)
+	{
+		value = instructionMap[pos][0];
+		//console.log("Looking for " + pInst + "index:" + pos + "value:"+ value);
+		if (value===pInst) return pos;
+
+		timeOut++;
+		span=span>>1;
+		if (pInst < value) pos-=span;
+		else pos+=span;
+
 	}
-	return null;
+	if (timeOut>=10) return null;
+	return pos;
+	//return null;
+	*/
+
+	// 256ms!!
+	return instructionQuickLookup[pInst];
 };
 
 
@@ -110,8 +190,12 @@ var pushByte = function(data)
 	mem[hw_sp--] = data&0xff;
 	//console.log("Pushbyte End hw_sp="+hw_sp);
 };
+
+// I'm changing words to be 32 bit...
 var pushWord = function(data)
 {
+	pushByte((data>>24)&0xff);
+	pushByte((data>>16)&0xff);
 	pushByte((data>>8)&0xff);
 	pushByte(data&0xff);
 };
@@ -125,9 +209,12 @@ var popByte = function()
 };
 var popWord = function()
 {
-	var hi = mem[hw_sp++];
-	var lo = mem[hw_sp++];
-	return ((hi<<8)&0xff)+(lo&0xff);
+	var byte4 = popByte();
+	var byte3 = popByte();
+	var byte2 = popByte();
+	var byte1 = popByte();
+
+	return (byte1<<24)+(byte2<<16)+(byte3<<8)+byte4;
 };
 
 
@@ -157,10 +244,17 @@ var dumpMemory = function ()
 
 var getNextWord = function()
 {
-	var total = mem[hw_pc++];
-	total = total<<8;
-	total+= mem[hw_pc++];
-	return total;
+	//var total = mem[hw_pc++];
+	//total = total<<8;
+	//total+= mem[hw_pc++];
+	//return total;
+
+	var byte1 = mem[hw_sp++];
+	var byte2 = mem[hw_sp++];
+	var byte3 = mem[hw_sp++];
+	var byte4 = mem[hw_sp++];
+
+	return ((byte1<<24)&0xff)+((byte2<<16)&0xff)+((byte3<<8)&0xff)+(byte4&0xff);
 };
 
 
@@ -168,6 +262,7 @@ var getNextWord = function()
 // parametrised function to set a value at given target.
 var setTarget = function(trg, val, addr)
 {
+	"use strict";
 	switch (trg) {
 		case TR1:	hw_r1 = val;	break;
 		case TR2:	hw_r2 = val;	break;
@@ -199,7 +294,7 @@ var getSource = function(src)
 		case SR2: return hw_r2;
 		case SR3: return hw_r3;
 		case SNB: return mem[hw_pc++];
-		case SNW: return (mem[hw_pc++]<<8)+mem[hw_pc++];
+		case SNW: return (mem[hw_pc++]<<24)+(mem[hw_pc++]<<16)+(mem[hw_pc++]<<8)+mem[hw_pc++];
 	}
 };
 
@@ -213,8 +308,10 @@ var storeByte = function(addr, val)
 // Store a word in memory.
 var storeWord = function(addr, val)
 {
-	mem[addr] = (val>>8)&0xff;
-	mem[addr+1] = val&0xff;
+	mem[addr] = (val>>24)&0xff;
+	mem[addr+1] = (val>>16)&0xff;
+	mem[addr+2] = (val>>8)&0xff;
+	mem[addr+3] = (val)&0xff;
 };
 
 // Get a byte from memory.
@@ -322,6 +419,78 @@ var loadTestBinary = function(number)
 		mem[l++] = 22;
 		mem[l++] = ADD_R1_R2;
 		mem[l++] = ADD_R3_R1;
+	}
+
+	// test Syscall
+	if (number==7)
+	{
+		mem[l++] = MOVB_R1;
+		mem[l++] = 11;
+		mem[l++] = PUSHW_R1;
+		mem[l++] = SYSCALL;
+		mem[l++] = SYS_LOGBYTE;
+	}
+
+	// Test stack with new word size.
+	if (number==8)
+	{
+		mem[l++] = MOVW_R1;
+		mem[l++] = 4;
+		mem[l++] = 3;
+		mem[l++] = 2;
+		mem[l++] = 1;
+		mem[l++] = PUSHW_R1;
+		mem[l++] = SYSCALL;
+		mem[l++] = SYS_LOGBYTE;
+	}
+
+	// test writing to display memory.
+	if (number==9)
+	{
+		mem[l++] = MOVW_R1;
+		mem[l++] = 0;
+		mem[l++] = 0;
+		mem[l++] = 4;
+		mem[l++] = 1;
+		mem[l++] = MOVB_R2;
+		mem[l++] = 1;
+		mem[l++] = MOVB_AR1_R2;
+		mem[l++] = INC_R1;
+		mem[l++] = INC_R2;
+		mem[l++] = JMPW;
+		mem[l++] = 0;
+		mem[l++] = 0;
+		mem[l++] = 0;
+		mem[l++] = 7;
+	}
+
+	// test writing to display memory.
+	if (number==10)
+	{
+		mem[l++] = MOVW_R1;	// Set r1 to address of screen memory.
+		mem[l++] = 0;
+		mem[l++] = 0;
+		mem[l++] = 4;
+		mem[l++] = 1;
+		mem[l++] = MOVB_R2;
+		mem[l++] = 1;
+		mem[l++] = MOVB_AR1_R2;
+		mem[l++] = INC_R1;
+		mem[l++] = INC_R2;
+		mem[l++] = INC_R3;
+		// need to be able to push a byte to stack
+		mem[l++] = PUSHB;			// push x
+		mem[l++] = 25;
+		mem[l++] = PUSHB;			// Push y
+		mem[l++] = 25;
+		mem[l++] = PUSHB_R3;		// Push col
+		mem[l++] = SYSCALL;			// set pixel
+		mem[l++] = SYS_SETPIXEL;
+		mem[l++] = JMPW;
+		mem[l++] = 0;
+		mem[l++] = 0;
+		mem[l++] = 0;
+		mem[l++] = 7;
 	}
 
 };

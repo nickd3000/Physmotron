@@ -2,6 +2,7 @@
 
 
 // INSTRUCTIONS
+var NO_OP = 0;
 var MOVB_R1 = 1;	// move next byte to register r1
 var MOVB_R2 = 2;
 var MOVB_R3 = 3;
@@ -19,6 +20,7 @@ var MOV_AW_R1 = 16;		// Move r1 to word address
 var MOV_AW_R2 = 17;
 var MOV_AW_R3 = 18;
 
+var MOVB_AR1_R2 = 19;	// Move r2 to address in r1
 
 var CMP_R1_R2 = 30;		// compare registers
 var CMP_R1_R3 = 31;
@@ -40,18 +42,21 @@ var PUSHB_R3 = 52;
 var PUSHW_R1 = 53;
 var PUSHW_R2 = 54;
 var PUSHW_R3 = 55;
-var POPB_R1 = 56;
-var POPB_R2 = 57;
-var POPB_R3 = 58;
-var POPW_R1 = 59;
-var POPW_R2 = 60;
-var POPW_R3 = 61;
+var PUSHB = 56;			// push next byte to stack.
+var PUSHW = 57;
+var POPB_R1 = 58;
+var POPB_R2 = 59;
+var POPB_R3 = 60;
+var POPW_R1 = 61;
+var POPW_R2 = 62;
+var POPW_R3 = 63;
 var ADD_R1_R2 = 70;		// ADD : R1 = R1 + R2
 var ADD_R1_R3 = 71;
 var ADD_R2_R1 = 72;
 var ADD_R2_R3 = 73;
 var ADD_R3_R1 = 74;
 var ADD_R3_R2 = 75;
+var SYSCALL = 100;
 
 // Target and source selectors for setTarget(..) and getSource(..)
 var TR1 = 0;	// Target R1
@@ -60,7 +65,7 @@ var TR3 = 2;
 var TAR1B = 3;	// Byte Address at R1
 var TAR2B = 4;
 var TAR3B = 5;
-var TAR1W = 6;	// Word Address at R1
+var TAR1W = 6;	// Word Address at R1 (words are going to be 4 bytes)
 var TAR2W = 7;
 var TAR3W = 8;
 var TPC = 9;	// Program counter.
@@ -94,6 +99,7 @@ var PUW = 9;
 var POB = 10;
 var POW = 11;
 var ADD = 12;
+var SYS = 15;
 // TODO: Maths: ADD, SUB, MUL
 // SYS (system call)
 // binary logic
@@ -101,7 +107,8 @@ var ADD = 12;
 
 // 	ID				Type	oprnd1	oprnd2
 var instructionMap =
-[	[MOVB_R1,		MOV,	TR1,	SNB],	// Move next byte into register.
+[	[NO_OP,			null,	null,	null],
+	[MOVB_R1,		MOV,	TR1,	SNB],	// Move next byte into register.
 	[MOVB_R2,		MOV,	TR2,	SNB],
 	[MOVB_R3,		MOV,	TR3,	SNB],
 	[MOVW_R1,		MOV,	TR1,	SNW],	// Move next word into register.
@@ -118,6 +125,8 @@ var instructionMap =
 	[MOV_AW_R1,		MOV,	TAW,	SR1],	// Move r1 to word address
 	[MOV_AW_R2,		MOV,	TAW,	SR2],
 	[MOV_AW_R3,		MOV,	TAW,	SR3],
+	//
+	[MOVB_AR1_R2,	MOV,	TAR1B,	SR2],	// Move r2 to address in r1
 	//
 	[CMP_R1_R2,		CMP,	SR1,	SR2],	// Compare registers.
 	[CMP_R1_R3,		CMP,	SR1,	SR3],
@@ -142,6 +151,8 @@ var instructionMap =
 	[PUSHW_R1,		PUW,	SR1,	null],	// Push register Word to stack
 	[PUSHW_R2,		PUW,	SR2,	null],
 	[PUSHW_R3,		PUW,	SR3,	null],
+	[PUSHB,			PUB,	SNB,	null],	// Push next byte to stack
+	[PUSHW,			PUB,	SNW,	null],	// Push next byte to stack
 	[POPB_R1,		POB,	TR1,	null],
 	[POPB_R2,		POB,	TR2,	null],
 	[POPB_R3,		POB,	TR3,	null],
@@ -154,4 +165,13 @@ var instructionMap =
 	[ADD_R2_R3,		ADD,	TR2,	SR3],
 	[ADD_R3_R1,		ADD,	TR3,	SR1],
 	[ADD_R3_R2,		ADD,	TR3,	SR2],
+	//
+	[SYSCALL,		SYS,	SNB,	null],	// Syscall
 ];
+
+// Creat a table to quickly find instruction rows in the instruction map.
+var instructionMapLength = instructionMap.length;
+var instructionQuickLookup = [];
+for (var ql = 0; ql<instructionMap.length;ql++) {
+	instructionQuickLookup[instructionMap[ql][0]]=ql;
+}
