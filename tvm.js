@@ -1,7 +1,7 @@
 // tvm.js
 // Hardware memory.
 
-
+// TODO: move machone variables to a machine structure.
 var memSize = 1024+(256*256)+1024;
 var mem = new Uint8Array(memSize);
 // Registers
@@ -17,23 +17,59 @@ var hw_flags = 0;
 var sign_flag = 1<<0;
 var zero_flag = 1<<1;
 
+// ISSUE:
+// how can i have an instruction that takes a byte
+// from memory and stores it in a register?
+// need a way to distinguish from fetching a byte
+// and fetching a word...
 
+function testProgram() {
+	var str = "";
+	str += "mov r1, [5] \n";
+	str += "mov r2, 22 \n";
+	//str += "pushb 55 \n";
+	//str += "popb r3 \n";
+	return str;
+}
 
-var main = function () {
+// Load bytecode from an int array to a memory location.
+function loadBytecode(bc, addr) {
+	console.log("BC: "+bc);
+	for (var i=0;i<bc.length;i++) {
+		mem[i+addr] = bc[i];
+		console.log("Load:"+bc[i]);
+	}
+}
+
+function main() {
 	"use strict";
-	//compile();
+
+	for (var m=0;m<memSize;m++) mem[m]=0;
+
+	loadBytecode(compile(testProgram()),0);
+
+	for (var i=0;i<10;i++) {
+		tick();
+		displayRegisters();
+	}
+
+	return; ////////////////// BAIL
 
 	initDisplay();
 	//setTimeout(initDisplay,10);
 	//redraw();
 
-	for (var m=0;m<memSize;m++) mem[m]=0;
+	// Test
+	//console.log(findInstructionInMap(1));
+
+
 
 	//displayRegisters();
-	loadTestBinary(10);
+	//loadTestBinary(10);
 
 	redrawScreen();
 
+	//for (var i=0;i<50;i++) tick();
 	/* timing
 	var t1 = performance.now();
 	for (var j=0;j<1000000;j++) {
@@ -58,7 +94,7 @@ var main = function () {
 	}
 	*/
 
-
+	// Start the machine running.
 	requestAnimationFrame(draw);
 
 
@@ -71,7 +107,7 @@ function draw() {
 	requestAnimationFrame(draw);
 
 	// C64 can do around 20000 CPU cycles per frame.
-	for (var i=0;i<20000;i++) {
+	for (var i=0;i<2000;i++) {
 		tick();
 	}
 
@@ -80,7 +116,7 @@ function draw() {
 
 }
 
-var tick = function ()
+function tick()
 {
 	"use strict";
 	var instr = mem[hw_pc++];
@@ -88,21 +124,28 @@ var tick = function ()
 
 	if (mapI===null) return;
 
-	var iID = instructionMap[mapI][0];
-	var iType = instructionMap[mapI][1];
-	var iOp1 = instructionMap[mapI][2];
-	var iOp2 = instructionMap[mapI][3];
+	var iID = imap[mapI][0];
+	var iType = imap[mapI][1];
+	var iOp1 = imap[mapI][2];
+	var iOp2 = imap[mapI][3];
 
 	//console.log("found:" + mapI + ", iID:" + iID + ", iType:" + iType + ", iOp1:" + iOp1 + ", iOp2:"+ iOp2 + "");
 
 	switch(iType) {
-		case MOV:
+		case itype.MOV:
 			var addr=null;
-			if (iOp1===TAB) addr=getSource(SNB);
-			if (iOp1===TAW) addr=getSource(SNW);
-			setTarget(iOp1, getSource(iOp2), addr);
+			if (iOp1===op.AB) addr=getSource(op.BY);
+			if (iOp1===op.AW) addr=getSource(op.WO);
+			if (iOp2===op.AB || iOp2===op.AW) {
+				 addr=getSource(op.WO);
+				 setTarget(iOp1, getSource(iOp2,addr), null);
+			 }
+			 else {
+				 setTarget(iOp1, getSource(iOp2,null), addr);
+			 }
+
 		break;
-		case CMP:
+		case itype.CMP:
 			var result = getSource(iOp2) - getSource(iOp1);
 			setFlag(zero_flag,0);
 			setFlag(sign_flag,0);
@@ -110,63 +153,28 @@ var tick = function ()
 			else if (result>0) setFlag(sign_flag,1);
 			else setFlag(sign_flag,0);
 			break;
-		case INC: setTarget(iOp1, getSource(iOp1)+1, null);	break;
-		case DEC: setTarget(iOp1, getSource(iOp1)-1, null);	break;
-		case JMP:
-			if (instr==JMPW) {
-				hw_pc = getSource(SNW);
+		case itype.INC: setTarget(iOp1, getSource(iOp1)+1, null);	break;
+		case itype.DEC: setTarget(iOp1, getSource(iOp1)-1, null);	break;
+		case itype.JMP:
+			if (instr==opcode.JMPW) {
+				hw_pc = getSource(op.WO);
 			}
-			if (instr==JMPEQ) {
-				if (getFlag(zero_flag)) hw_pc = getSource(SNW);
+			if (instr==opcode.JMPEQ) {
+				if (getFlag(zero_flag)) hw_pc = getSource(op.WO);
 				else hw_pc+=4; // skip word.
 			}
 			break;
-		case PUB: pushByte(getSource(iOp1)); break;
-		case PUW: pushWord(getSource(iOp1)); break;
-		case POB: setTarget(iOp1,popByte()); break;
-		case POW: setTarget(iOp1,popWord()); break;
-		case ADD: setTarget(iOp1,(getSource(iOp1)+getSource(iOp2))&0xffff); break;
-		case SYS: sysCall(getSource(iOp1)); break;
+		case itype.PUB: pushByte(getSource(iOp1)); break;
+		case itype.PUW: pushWord(getSource(iOp1)); break;
+		case itype.POB: setTarget(iOp1,popByte()); break;
+		case itype.POW: setTarget(iOp1,popWord()); break;
+		case itype.ADD: setTarget(iOp1,(getSource(iOp1)+getSource(iOp2))&0xffff); break;
+		case itype.SYS: sysCall(getSource(iOp1)); break;
 	}
 };
 
 
 var findInstructionInMap = function (pInst) {
-	/*
-	// 100000 iterations took 643ms
-	for (var i = 0 ; i < instructionMap.length;i++) {
-		if (instructionMap[i][0] == pInst) return i;
-	}*/
-
-	// 100000 iterations took 603ms
-	/*
-	for (var i = 0 ; i < quickLookup.length;i++) {
-		if (quickLookup[i] == pInst) return i;
-	}*/
-
-	/* binary search 660ms
-	span=instructionMapLength>>2;
-	pos=span;
-	timeOut =0;
-	value=0;
-	while (timeOut<10)
-	{
-		value = instructionMap[pos][0];
-		//console.log("Looking for " + pInst + "index:" + pos + "value:"+ value);
-		if (value===pInst) return pos;
-
-		timeOut++;
-		span=span>>1;
-		if (pInst < value) pos-=span;
-		else pos+=span;
-
-	}
-	if (timeOut>=10) return null;
-	return pos;
-	//return null;
-	*/
-
-	// 256ms!!
 	return instructionQuickLookup[pInst];
 };
 
@@ -264,22 +272,22 @@ var setTarget = function(trg, val, addr)
 {
 	"use strict";
 	switch (trg) {
-		case TR1:	hw_r1 = val;	break;
-		case TR2:	hw_r2 = val;	break;
-		case TR3:	hw_r3 = val;	break;
-		case TAR1B:	storeByte(hw_r1,val);	break;
-		case TAR2B:	storeByte(hw_r2,val);	break;
-		case TAR3B:	storeByte(hw_r3,val);	break;
-		case TAR1W:	storeWord(hw_r1,val);	break;
-		case TAR2W:	storeWord(hw_r2,val);	break;
-		case TAR3W:	storeWord(hw_r3,val);	break;
-		case TPC:	hw_pc = val; break;
-		case TSP:	hw_sp = val; break;
-		case TFL:	hw_flags = val; break;
+		case op.R1:	hw_r1 = val;	break;
+		case op.R2:	hw_r2 = val;	break;
+		case op.R3:	hw_r3 = val;	break;
+		case op.AR1B:	storeByte(hw_r1,val);	break;
+		case op.AR2B:	storeByte(hw_r2,val);	break;
+		case op.AR3B:	storeByte(hw_r3,val);	break;
+		case op.AR1W:	storeWord(hw_r1,val);	break;
+		case op.AR2W:	storeWord(hw_r2,val);	break;
+		case op.AR3W:	storeWord(hw_r3,val);	break;
+		case op.PC:	hw_pc = val; break;
+		case op.SP:	hw_sp = val; break;
+		case op.FL:	hw_flags = val; break;
 
 		// We need two vars for these operations...
-		case TAB:	mem[addr] = val; break;
-		case TAW:	mem[addr] = val; break;
+		case op.AB:	mem[addr] = val; break;
+		case op.AW:	mem[addr] = val; break;
 		//case TBY:	 break;	// TODO: throw an error if we try to write to a constant.
 		//case TWO:	 break;
 	}
@@ -287,26 +295,28 @@ var setTarget = function(trg, val, addr)
 
 
 // parametrised function to get a value at given target.
-var getSource = function(src)
+var getSource = function(src,addr)
 {
 	switch (src) {
-		case SR1: return hw_r1;
-		case SR2: return hw_r2;
-		case SR3: return hw_r3;
-		case SNB: return mem[hw_pc++];
-		case SNW: return (mem[hw_pc++]<<24)+(mem[hw_pc++]<<16)+(mem[hw_pc++]<<8)+mem[hw_pc++];
+		case op.R1: return hw_r1;
+		case op.R2: return hw_r2;
+		case op.R3: return hw_r3;
+		case op.BY: return mem[hw_pc++];
+		case op.WO: return (mem[hw_pc++]<<24)+(mem[hw_pc++]<<16)+(mem[hw_pc++]<<8)+mem[hw_pc++];
+		case op.AB: return mem[addr];
+		case op.AW: return (mem[addr+3]<<24)+(mem[addr+2]<<16)+(mem[addr+1]<<8)+mem[addr];
 	}
 };
 
 // Store a byte in memory.
 // TODO: bounds check on mem access for all these functions.
-var storeByte = function(addr, val)
+function storeByte(addr, val)
 {
 	mem[addr] = val&0xff;
 };
 
 // Store a word in memory.
-var storeWord = function(addr, val)
+function storeWord(addr, val)
 {
 	mem[addr] = (val>>24)&0xff;
 	mem[addr+1] = (val>>16)&0xff;
@@ -315,13 +325,13 @@ var storeWord = function(addr, val)
 };
 
 // Get a byte from memory.
-var getByte = function(addr)
+function getByte(addr)
 {
 	return mem[addr];
 };
 
 // Get a word from memory.
-var getWord = function(addr)
+function getWord(addr)
 {
 	var combined = 0;
 	combined = (mem[addr]<<8)+mem[addr+1];
@@ -330,7 +340,7 @@ var getWord = function(addr)
 
 
 
-var loadTestBinary = function(number)
+function loadTestBinary(number)
 {
 	var l=0;
 	if (number==1)
@@ -467,26 +477,26 @@ var loadTestBinary = function(number)
 	// test writing to display memory.
 	if (number==10)
 	{
-		mem[l++] = MOVW_R1;	// Set r1 to address of screen memory.
+		mem[l++] = opcode.MOVW_R1;	// Set r1 to address of screen memory.
 		mem[l++] = 0;
 		mem[l++] = 0;
 		mem[l++] = 4;
 		mem[l++] = 1;
-		mem[l++] = MOVB_R2;
+		mem[l++] = opcode.MOVB_R2;
 		mem[l++] = 1;
-		mem[l++] = MOVB_AR1_R2;
-		mem[l++] = INC_R1;
-		mem[l++] = INC_R2;
-		mem[l++] = INC_R3;
+		mem[l++] = opcode.MOVB_AR1_R2;
+		mem[l++] = opcode.INC_R1;
+		mem[l++] = opcode.INC_R2;
+		mem[l++] = opcode.INC_R3;
 		// need to be able to push a byte to stack
-		mem[l++] = PUSHB;			// push x
+		mem[l++] = opcode.PUSHB;			// push x
 		mem[l++] = 25;
-		mem[l++] = PUSHB;			// Push y
+		mem[l++] = opcode.PUSHB;			// Push y
 		mem[l++] = 25;
-		mem[l++] = PUSHB_R3;		// Push col
-		mem[l++] = SYSCALL;			// set pixel
+		mem[l++] = opcode.PUSHB_R3;		// Push col
+		mem[l++] = opcode.SYSCALL;			// set pixel
 		mem[l++] = SYS_SETPIXEL;
-		mem[l++] = JMPW;
+		mem[l++] = opcode.JMPW;
 		mem[l++] = 0;
 		mem[l++] = 0;
 		mem[l++] = 0;
