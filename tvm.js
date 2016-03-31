@@ -1,7 +1,7 @@
 // tvm.js
 // Hardware memory.
 
-// TODO: move machone variables to a machine structure.
+// TODO: move machine variables to a machine structure.
 var memSize = 1024+(256*256)+1024;
 var mem = new Uint8Array(memSize);
 // Registers
@@ -16,6 +16,7 @@ var hw_flags = 0;
 // Bit indexes into the flags register.
 var sign_flag = 1<<0;
 var zero_flag = 1<<1;
+var break_flag = 1<<2;
 
 // ISSUE:
 // how can i have an instruction that takes a byte
@@ -25,8 +26,25 @@ var zero_flag = 1<<1;
 
 function testProgram() {
 	var str = "";
-	str += "mov r1, [5] \n";
-	str += "mov r2, 22 \n";
+	//str += "movb r1, 11 \n";
+
+	//str += "inc r1 \n";
+	str += "bob: inc r1\n";
+	str += "movb r3,123 \n";
+	str += "movb [test],r3 \n";
+	str += "jmp nick \n";
+	str += "bum: \n";
+	str += "nick: inc r2\n";
+	//str += "bob: movb r2, [16]\n";
+	str += "jmp bob \n";
+	str += "test: \n";
+	//str += "jmp bob \n";
+
+
+	//str += "inc r1 \n";
+	//str += "mov [r1b], r2, \n";
+	//str += "inc r2 \n";
+	//str += "jmp w7 \n";
 	//str += "pushb 55 \n";
 	//str += "popb r3 \n";
 	return str;
@@ -34,10 +52,10 @@ function testProgram() {
 
 // Load bytecode from an int array to a memory location.
 function loadBytecode(bc, addr) {
-	console.log("BC: "+bc);
+	//console.log("BC: "+bc);
 	for (var i=0;i<bc.length;i++) {
 		mem[i+addr] = bc[i];
-		console.log("Load:"+bc[i]);
+		//console.log("Load:"+bc[i]);
 	}
 }
 
@@ -47,13 +65,18 @@ function main() {
 	for (var m=0;m<memSize;m++) mem[m]=0;
 
 	loadBytecode(compile(testProgram()),0);
+	dumpMemory();
+
 
 	for (var i=0;i<10;i++) {
 		tick();
 		displayRegisters();
 	}
 
+	dumpMemory();
+
 	return; ////////////////// BAIL
+
 
 	initDisplay();
 	//setTimeout(initDisplay,10);
@@ -100,7 +123,7 @@ function main() {
 
 	//redrawScreen();
 	//dumpMemory();
-};
+}
 
 function draw() {
 
@@ -109,6 +132,7 @@ function draw() {
 	// C64 can do around 20000 CPU cycles per frame.
 	for (var i=0;i<2000;i++) {
 		tick();
+		//displayRegisters();
 	}
 
 	//for (var sl=0;sl<10;sl++) tickDisplay();
@@ -119,10 +143,17 @@ function draw() {
 function tick()
 {
 	"use strict";
+
+	if (getFlag(break_flag)>0) return;
+
 	var instr = mem[hw_pc++];
 	var mapI = findInstructionInMap(instr);
 
 	if (mapI===null) return;
+
+	if (mapI===undefined) {
+		var trap = 1;
+	}
 
 	var iID = imap[mapI][0];
 	var iType = imap[mapI][1];
@@ -132,7 +163,8 @@ function tick()
 	//console.log("found:" + mapI + ", iID:" + iID + ", iType:" + iType + ", iOp1:" + iOp1 + ", iOp2:"+ iOp2 + "");
 
 	switch(iType) {
-		case itype.MOV:
+		case itype.MOVB:
+		case itype.MOVW:
 			var addr=null;
 			if (iOp1===op.AB) addr=getSource(op.BY);
 			if (iOp1===op.AW) addr=getSource(op.WO);
@@ -156,10 +188,10 @@ function tick()
 		case itype.INC: setTarget(iOp1, getSource(iOp1)+1, null);	break;
 		case itype.DEC: setTarget(iOp1, getSource(iOp1)-1, null);	break;
 		case itype.JMP:
-			if (instr==opcode.JMPW) {
+			if (instr===opcode.JMPW) {
 				hw_pc = getSource(op.WO);
 			}
-			if (instr==opcode.JMPEQ) {
+			if (instr===opcode.JMPEQ) {
 				if (getFlag(zero_flag)) hw_pc = getSource(op.WO);
 				else hw_pc+=4; // skip word.
 			}
@@ -170,52 +202,68 @@ function tick()
 		case itype.POW: setTarget(iOp1,popWord()); break;
 		case itype.ADD: setTarget(iOp1,(getSource(iOp1)+getSource(iOp2))&0xffff); break;
 		case itype.SYS: sysCall(getSource(iOp1)); break;
+		case itype.BRK: setFlag(break_flag,1); break;
 	}
-};
+}
 
+function processMiscInstruction(instr) {
 
-var findInstructionInMap = function (pInst) {
+	switch(instr)
+	{
+		case opcode.BRK:
+
+		break;
+		default:
+			console.log("processMiscInstruction: Misc instruction not found: " + instr);
+			break;
+	}
+
+}
+
+function findInstructionInMap (pInst) {
 	return instructionQuickLookup[pInst];
-};
+}
 
 
 // Set a bit (using the flag bit mask) in hw_flags to value (0|1)
-var setFlag = function(flag, value)
+function setFlag(flag, value)
 {
 	if (value>0) hw_flags |= flag;
 	else hw_flags &= ~flag;
-};
+}
 
-var getFlag = function(flag)
+function getFlag(flag)
 {
 	return (hw_flags&flag)>0?1:0;
-};
+}
 
 // Stack operations.
-var pushByte = function(data)
+function pushByte(data)
 {
 	//console.log("Pushbyte Start hw_sp="+hw_sp);
 	mem[hw_sp--] = data&0xff;
 	//console.log("Pushbyte End hw_sp="+hw_sp);
-};
+}
 
 // I'm changing words to be 32 bit...
-var pushWord = function(data)
+function pushWord(data)
 {
 	pushByte((data>>24)&0xff);
 	pushByte((data>>16)&0xff);
 	pushByte((data>>8)&0xff);
 	pushByte(data&0xff);
-};
-var popByte = function()
+}
+
+function popByte()
 {
 	//console.log("Popbyte START hw_sp="+hw_sp);
 	var popValue = mem[++hw_sp]&0xff;
 	//console.log("Value="+popValue);
 	return popValue;
 	//console.log("Popbyte END hw_sp="+hw_sp);
-};
-var popWord = function()
+}
+
+function popWord()
 {
 	var byte4 = popByte();
 	var byte3 = popByte();
@@ -223,20 +271,20 @@ var popWord = function()
 	var byte1 = popByte();
 
 	return (byte1<<24)+(byte2<<16)+(byte3<<8)+byte4;
-};
+}
 
 
 
-var displayRegisters = function()
+function displayRegisters()
 {
 	var outHW = "PC:" + hw_pc + " \tSP:" + hw_sp;
 	var outRegs =  " \tR1:" + hw_r1 + " \tR2:" + hw_r2  + " \tR3:" + hw_r3;
 	var outStack = " \tST:"+mem[hw_sp+1]+","+mem[hw_sp+2]+","+mem[hw_sp+3]+","+mem[hw_sp+4];
 	console.log(outHW + outRegs + outStack);
 
-};
+}
 
-var dumpMemory = function ()
+function dumpMemory()
 {
 	var numLines = 5;
 	var lineLength = 8;
@@ -248,9 +296,9 @@ var dumpMemory = function ()
 		}
 		console.log(str);
 	}
-};
+}
 
-var getNextWord = function()
+function getNextWord()
 {
 	//var total = mem[hw_pc++];
 	//total = total<<8;
@@ -263,12 +311,12 @@ var getNextWord = function()
 	var byte4 = mem[hw_sp++];
 
 	return ((byte1<<24)&0xff)+((byte2<<16)&0xff)+((byte3<<8)&0xff)+(byte4&0xff);
-};
+}
 
 
 
 // parametrised function to set a value at given target.
-var setTarget = function(trg, val, addr)
+function setTarget (trg, val, addr)
 {
 	"use strict";
 	switch (trg) {
@@ -291,11 +339,11 @@ var setTarget = function(trg, val, addr)
 		//case TBY:	 break;	// TODO: throw an error if we try to write to a constant.
 		//case TWO:	 break;
 	}
-};
+}
 
 
 // parametrised function to get a value at given target.
-var getSource = function(src,addr)
+function getSource(src,addr)
 {
 	switch (src) {
 		case op.R1: return hw_r1;
@@ -306,14 +354,14 @@ var getSource = function(src,addr)
 		case op.AB: return mem[addr];
 		case op.AW: return (mem[addr+3]<<24)+(mem[addr+2]<<16)+(mem[addr+1]<<8)+mem[addr];
 	}
-};
+}
 
 // Store a byte in memory.
 // TODO: bounds check on mem access for all these functions.
 function storeByte(addr, val)
 {
 	mem[addr] = val&0xff;
-};
+}
 
 // Store a word in memory.
 function storeWord(addr, val)
@@ -322,13 +370,13 @@ function storeWord(addr, val)
 	mem[addr+1] = (val>>16)&0xff;
 	mem[addr+2] = (val>>8)&0xff;
 	mem[addr+3] = (val)&0xff;
-};
+}
 
 // Get a byte from memory.
 function getByte(addr)
 {
 	return mem[addr];
-};
+}
 
 // Get a word from memory.
 function getWord(addr)
@@ -336,7 +384,7 @@ function getWord(addr)
 	var combined = 0;
 	combined = (mem[addr]<<8)+mem[addr+1];
 	return combined;
-};
+}
 
 
 
@@ -503,4 +551,4 @@ function loadTestBinary(number)
 		mem[l++] = 7;
 	}
 
-};
+}

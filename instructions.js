@@ -1,8 +1,9 @@
 // instructions.js
-"use strict";
+//'use strict';
 
 // Machine instruction definitions.
 
+// TODO: split up mov into byte and word operations?
 
 var opcode = { NO_OP: 0,
 	MOVB_R1: 1,	// move next byte to register r1
@@ -11,15 +12,15 @@ var opcode = { NO_OP: 0,
 	MOVW_R1: 4,	// move next word to register.
 	MOVW_R2: 5,
 	MOVW_R3: 6,
-	MOV_R1_R2: 10,	// move reg to reg.
-	MOV_R1_R3: 11,
-	MOV_R2_R1: 12,
-	MOV_R2_R3: 13,
-	MOV_R3_R1: 14,
-	MOV_R3_R2: 15,
-	MOV_AW_R1: 16,		// Move r1 to word address
-	MOV_AW_R2: 17,
-	MOV_AW_R3: 18,
+	MOVW_R1_R2: 10,	// move reg to reg.
+	MOVW_R1_R3: 11,
+	MOVW_R2_R1: 12,
+	MOVW_R2_R3: 13,
+	MOVW_R3_R1: 14,
+	MOVW_R3_R2: 15,
+	MOVB_AW_R1: 16,		// Move r1 to word address
+	MOVB_AW_R2: 17,
+	MOVB_AW_R3: 18,
 	MOVB_R1_AW: 19,		// Move byte at word address to R1
 	MOVB_R2_AW: 20,
 	MOVB_R3_AW: 21,
@@ -39,7 +40,7 @@ var opcode = { NO_OP: 0,
 	INC_R1: 50,		// Incriment
 	INC_R2: 51,
 	INC_R3: 52,
-	DEC_R1: 53,		// Incriment
+	DEC_R1: 53,		// Decriment
 	DEC_R2: 54,
 	DEC_R3: 55,
 	JMPW: 60,			// Jump to next word.
@@ -65,6 +66,7 @@ var opcode = { NO_OP: 0,
 	ADD_R3_R1: 94,
 	ADD_R3_R2: 95,
 	SYSCALL: 100,		// Syscall, next byte specifies what syscall.
+	BRK: 101,			// Set Break flag
 };
 
 // Id's used for source and dest for instructions.
@@ -89,45 +91,69 @@ var op = {
 
 // Instruction types.
 var itype = {
-	MOV: 1,
-	CMP: 2,
-	INC: 5,
-	DEC: 6,
-	JMP: 7,
+	MOVB: 1,
+	MOVW: 2,
+	CMP: 3,
+	INC: 4,
+	DEC: 5,
+	JMP: 6,
 	PUB: 8,		// Push byte
 	PUW: 9,		// Push word (4 bytes)
 	POB: 10,		// Pop byte
 	POW: 11,		// Pop word.
 	ADD: 12,
 	SYS: 15,
+	BRK: 16,
+
 };
+
+// NOTE: the above instruction types should represent groups of instructions
+// that perform a similar action and only differ by their operands.
+
+// map instruction types to names used by the assembly language.
+var instNames = [
+	[itype.MOVB,	'movb'],
+	[itype.MOVW,	'movw'],
+	[itype.CMP, 'cmp','compare'],
+	[itype.INC, 'inc'],
+	[itype.DEC, 'dec'],
+	[itype.JMP, 'jmp', 'jump'],
+	[itype.PUB, 'pushb'],
+	[itype.PUW, 'pushw'],
+	[itype.POB, 'popb'],
+	[itype.POW, 'popw'],
+	[itype.ADD, 'add'],
+	[itype.SYS, 'sys', 'syscall'],
+	[itype.BRK, 'brk', 'break'],
+];
+
 
 // Instruction map.
 var imap = [
 	[opcode.NO_OP,			null,	null,	null],
-	[opcode.MOVB_R1,		itype.MOV,	op.R1,	op.BY],	// Move next byte into register.
-	[opcode.MOVB_R2,		itype.MOV,	op.R2,	op.BY],
-	[opcode.MOVB_R3,		itype.MOV,	op.R3,	op.BY],
-	[opcode.MOVW_R1,		itype.MOV,	op.R1,	op.WO],	// Move next word into register.
-	[opcode.MOVW_R2,		itype.MOV,	op.R2,	op.WO],
-	[opcode.MOVW_R3,		itype.MOV,	op.R3,	op.WO],
+	[opcode.MOVB_R1,		itype.MOVB,	op.R1,	op.BY],	// Move next byte into register.
+	[opcode.MOVB_R2,		itype.MOVB,	op.R2,	op.BY],
+	[opcode.MOVB_R3,		itype.MOVB,	op.R3,	op.BY],
+	[opcode.MOVW_R1,		itype.MOVW,	op.R1,	op.WO],	// Move next word into register.
+	[opcode.MOVW_R2,		itype.MOVW,	op.R2,	op.WO],
+	[opcode.MOVW_R3,		itype.MOVW,	op.R3,	op.WO],
 	//
-	[opcode.MOV_R1_R2,		itype.MOV,	op.R1,	op.R2],	// Move reg to reg.
-	[opcode.MOV_R1_R3,		itype.MOV,	op.R1,	op.R3],
-	[opcode.MOV_R2_R1,		itype.MOV,	op.R2,	op.R1],
-	[opcode.MOV_R2_R3,		itype.MOV,	op.R2,	op.R3],
-	[opcode.MOV_R3_R1,		itype.MOV,	op.R3,	op.R1],
-	[opcode.MOV_R3_R2,		itype.MOV,	op.R3,	op.R2],
+	[opcode.MOVW_R1_R2,		itype.MOVW,	op.R1,	op.R2],	// Move reg to reg.
+	[opcode.MOVW_R1_R3,		itype.MOVW,	op.R1,	op.R3],
+	[opcode.MOVW_R2_R1,		itype.MOVW,	op.R2,	op.R1],
+	[opcode.MOVW_R2_R3,		itype.MOVW,	op.R2,	op.R3],
+	[opcode.MOVW_R3_R1,		itype.MOVW,	op.R3,	op.R1],
+	[opcode.MOVW_R3_R2,		itype.MOVW,	op.R3,	op.R2],
 	//
-	[opcode.MOV_AW_R1,		itype.MOV,	op.AW,	op.R1],	// Move r1 to word address
-	[opcode.MOV_AW_R2,		itype.MOV,	op.AW,	op.R2],
-	[opcode.MOV_AW_R3,		itype.MOV,	op.AW,	op.R3],
+	[opcode.MOVB_AW_R1,		itype.MOVB,	op.AW,	op.R1],	// Move byte r1 to address
+	[opcode.MOVB_AW_R2,		itype.MOVB,	op.AW,	op.R2],
+	[opcode.MOVB_AW_R3,		itype.MOVB,	op.AW,	op.R3],
 	//
-	[opcode.MOVB_R1_AW,		itype.MOV,	op.R1,	op.AW],	// Move word address to r1.
-	[opcode.MOVB_R2_AW,		itype.MOV,	op.R2,	op.AW],
-	[opcode.MOVB_R3_AW,		itype.MOV,	op.R3,	op.AW],
+	[opcode.MOVB_R1_AW,		itype.MOVB,	op.R1,	op.AW],	// Move byte at address to r1.
+	[opcode.MOVB_R2_AW,		itype.MOVB,	op.R2,	op.AW],
+	[opcode.MOVB_R3_AW,		itype.MOVB,	op.R3,	op.AW],
 	//
-	[opcode.MOVB_AR1_R2,	itype.MOV,	op.AR1B,	op.R2],	// Move r2 to address in r1
+	[opcode.MOVB_AR1_R2,	itype.MOVB,	op.AR1B,	op.R2],	// Move r2 to address in r1
 	//
 	[opcode.CMP_R1_R2,		itype.CMP,	op.R1,	op.R2],	// Compare registers.
 	[opcode.CMP_R1_R3,		itype.CMP,	op.R1,	op.R3],
@@ -174,6 +200,7 @@ var imap = [
 	[opcode.ADD_R3_R2,		itype.ADD,	op.R3,	op.R2],
 	//
 	[opcode.SYSCALL,		itype.SYS,	op.BY,	null],
+	[opcode.BRK,			itype.BRK,	null,	null],
 ];
 
 
