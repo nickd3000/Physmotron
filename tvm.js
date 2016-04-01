@@ -25,11 +25,27 @@ var break_flag = 1<<2;
 // and fetching a word...
 
 function testProgram() {
-	var str = "";
+	var NL=" \n", str = "";
 	//str += "movb r1, 11 \n";
 
 	//str += 'inc r1 \n';
 
+	//str = 	'movb r2,[r1b]';
+	str = 	'movw r1,text' + NL +
+			'loopStart:' + NL +
+			'movb r2,[r1b]' + NL +
+			'cmp r2, 0' + NL +
+			'jeq end' + NL +
+			'pushb r2' + NL +
+			'sys 3' + NL +
+			'inc r1' + NL +
+
+			'jmp loopStart' + NL +
+			'end: brk' + NL +
+			'text: db "Hello World.",0' + NL;
+
+
+	/*
 	str += 'movb [ending],101 \n';
 	str += 'bob: inc r1\n';
 	str += 'movb r3,123 \n';
@@ -43,7 +59,7 @@ function testProgram() {
 	str += 'var1: db "nick",	12,0xff \n';
 	str += 'var2: db "Nick" \n';
 	str += 'ending: db 1,2,3,4,5,0xff \n';
-
+	*/
 
 	//str += "inc r1 \n";
 	//str += "mov [r1b], r2, \n";
@@ -69,15 +85,16 @@ function main() {
 	for (var m=0;m<memSize;m++) mem[m]=0;
 
 	loadBytecode(compile(testProgram()),0);
-	dumpMemory();
+	//dumpMemory();
 
 
-	for (var i=0;i<10;i++) {
+	for (var i=0;i<260;i++) {
+		//displayRegisters();
 		tick();
-		displayRegisters();
-	}
 
-	dumpMemory();
+	}
+	//displayRegisters();
+	//dumpMemory();
 
 	return; ////////////////// BAIL
 
@@ -156,6 +173,7 @@ function tick()
 	if (mapI===null) return;
 
 	if (mapI===undefined) {
+		console.log("VM ERROR: Instruction not found at byte " + hw_pc);
 		var trap = 1;
 	}
 
@@ -172,13 +190,18 @@ function tick()
 			var addr=null;
 			if (iOp1===op.AB) addr=getSource(op.BY);
 			if (iOp1===op.AW) addr=getSource(op.WO);
-			if (iOp2===op.AB || iOp2===op.AW) {
+
+			if (iOp2===op.AR1B || iOp2===op.AR2B || iOp2===op.AR3B) {
+				 //addr=getSource(op.WO);
+				 setTarget(iOp1, getSource(iOp2,addr), null);
+			}
+			else if (iOp2===op.AB || iOp2===op.AW ) {
 				 addr=getSource(op.WO);
 				 setTarget(iOp1, getSource(iOp2,addr), null);
-			 }
-			 else {
+			}
+			else {
 				 setTarget(iOp1, getSource(iOp2,null), addr);
-			 }
+			}
 
 		break;
 		case itype.CMP:
@@ -199,6 +222,10 @@ function tick()
 				if (getFlag(zero_flag)) hw_pc = getSource(op.WO);
 				else hw_pc+=4; // skip word.
 			}
+			break;
+		case itype.JEQ:
+			if (getFlag(zero_flag)) hw_pc = getSource(op.WO);
+			else hw_pc+=4; // skip word.
 			break;
 		case itype.PUB: pushByte(getSource(iOp1)); break;
 		case itype.PUW: pushWord(getSource(iOp1)); break;
@@ -357,6 +384,12 @@ function getSource(src,addr)
 		case op.WO: return (mem[hw_pc++]<<24)+(mem[hw_pc++]<<16)+(mem[hw_pc++]<<8)+mem[hw_pc++];
 		case op.AB: return mem[addr];
 		case op.AW: return (mem[addr+3]<<24)+(mem[addr+2]<<16)+(mem[addr+1]<<8)+mem[addr];
+		case op.AR1B: return mem[hw_r1];
+		case op.AR2B: return mem[hw_r2];
+		case op.AR3B: return mem[hw_r3];
+		case op.AR1W: return (mem[hw_r1+3]<<24)+(mem[hw_r1+2]<<16)+(mem[hw_r1+1]<<8)+mem[hw_r1];
+		case op.AR2W: return (mem[hw_r2+3]<<24)+(mem[hw_r2+2]<<16)+(mem[hw_r2+1]<<8)+mem[hw_r2];
+		case op.AR3W: return (mem[hw_r3+3]<<24)+(mem[hw_r3+2]<<16)+(mem[hw_r3+1]<<8)+mem[hw_r3];
 	}
 }
 

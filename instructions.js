@@ -24,50 +24,64 @@ var opcode = { NO_OP: 0,
 	MOVB_R1_AW: 19,		// Move byte at word address to R1
 	MOVB_R2_AW: 20,
 	MOVB_R3_AW: 21,
-	MOVB_AR1_R2: 22,	// Move r2 to address in r1
+
+	MOVB_AR1_R2: 22,	// Move r2 to address r1
+	MOVB_AR1_R3: 23,
+	MOVB_AR2_R1: 24,
+	MOVB_AR2_R3: 25,
+	MOVB_AR3_R1: 26,
+	MOVB_AR3_R2: 27,
+
+	MOVB_R1_AR2: 28,	// Move data at AR2 into R1
+	MOVB_R1_AR3: 29,
+	MOVB_R2_AR1: 30,
+	MOVB_R2_AR3: 31,
+	MOVB_R3_AR1: 32,
+	MOVB_R3_AR2: 33,
+
 	MOVB_AW_BY: 25,		// Move next byte to word address
-	CMP_R1_R2: 30,		// compare registers
-	CMP_R1_R3: 31,
-	CMP_R2_R1: 32,
-	CMP_R2_R3: 33,
-	CMP_R3_R1: 34,
-	CMP_R3_R2: 35,
-	CMP_R1_WO: 36,		// Compare R1 to next word
-	CMP_R2_WO: 37,
-	CMP_R3_WO: 38,
-	CMP_R1_BY: 39,		// Compare R1 to next byte
-	CMP_R2_BY: 40,
-	CMP_R3_BY: 41,
-	INC_R1: 50,		// Incriment
-	INC_R2: 51,
-	INC_R3: 52,
-	DEC_R1: 53,		// Decriment
-	DEC_R2: 54,
-	DEC_R3: 55,
-	JMPW: 60,			// Jump to next word.
-	JMPEQ: 61,			// jump on equals
-	PUSHB_R1: 70,
-	PUSHB_R2: 71,
-	PUSHB_R3: 72,
-	PUSHW_R1: 73,
-	PUSHW_R2: 74,
-	PUSHW_R3: 75,
-	PUSHB: 76,			// push next byte to stack.
-	PUSHW: 77,
-	POPB_R1: 78,
-	POPB_R2: 79,
-	POPB_R3: 80,
-	POPW_R1: 81,
-	POPW_R2: 82,
-	POPW_R3: 83,
-	ADD_R1_R2: 90,		// ADD : R1: R1 + R2
-	ADD_R1_R3: 91,
-	ADD_R2_R1: 92,
-	ADD_R2_R3: 93,
-	ADD_R3_R1: 94,
-	ADD_R3_R2: 95,
-	SYSCALL: 100,		// Syscall, next byte specifies what syscall.
-	BRK: 101,			// Set Break flag
+	CMP_R1_R2: 60,		// compare registers
+	CMP_R1_R3: 61,
+	CMP_R2_R1: 62,
+	CMP_R2_R3: 63,
+	CMP_R3_R1: 64,
+	CMP_R3_R2: 65,
+	CMP_R1_WO: 66,		// Compare R1 to next word
+	CMP_R2_WO: 67,
+	CMP_R3_WO: 68,
+	CMP_R1_BY: 69,		// Compare R1 to next byte
+	CMP_R2_BY: 70,
+	CMP_R3_BY: 71,
+	INC_R1: 90,		// Incriment
+	INC_R2: 91,
+	INC_R3: 92,
+	DEC_R1: 93,		// Decriment
+	DEC_R2: 94,
+	DEC_R3: 95,
+	JMPW: 100,			// Jump to next word.
+	JMPEQ: 101,			// jump on equals
+	PUSHB_R1: 120,
+	PUSHB_R2: 121,
+	PUSHB_R3: 122,
+	PUSHW_R1: 123,
+	PUSHW_R2: 124,
+	PUSHW_R3: 125,
+	PUSHB: 130,			// push next byte to stack.
+	PUSHW: 131,
+	POPB_R1: 140,
+	POPB_R2: 141,
+	POPB_R3: 142,
+	POPW_R1: 143,
+	POPW_R2: 144,
+	POPW_R3: 145,
+	ADD_R1_R2: 170,		// ADD : R1: R1 + R2
+	ADD_R1_R3: 171,
+	ADD_R2_R1: 172,
+	ADD_R2_R3: 173,
+	ADD_R3_R1: 174,
+	ADD_R3_R2: 175,
+	SYSCALL: 200,		// Syscall, next byte specifies what syscall.
+	BRK: 201,			// Set Break flag
 };
 
 // Id's used for source and dest for instructions.
@@ -97,14 +111,15 @@ var itype = {
 	CMP: 3,
 	INC: 4,
 	DEC: 5,
-	JMP: 6,
-	PUB: 8,		// Push byte
-	PUW: 9,		// Push word (4 bytes)
-	POB: 10,		// Pop byte
-	POW: 11,		// Pop word.
-	ADD: 12,
-	SYS: 15,
-	BRK: 16,
+	JMP: 6,		// Jump
+	JEQ: 7,		// Jump if equal.
+	PUB: 20,		// Push byte
+	PUW: 21,		// Push word (4 bytes)
+	POB: 22,		// Pop byte
+	POW: 23,		// Pop word.
+	ADD: 24,
+	SYS: 25,
+	BRK: 26,
 
 };
 
@@ -119,6 +134,7 @@ var instNames = [
 	[itype.INC, 'inc'],
 	[itype.DEC, 'dec'],
 	[itype.JMP, 'jmp', 'jump'],
+	[itype.JEQ, 'jeq'],
 	[itype.PUB, 'pushb'],
 	[itype.PUW, 'pushw'],
 	[itype.POB, 'popb'],
@@ -155,6 +171,19 @@ var imap = [
 	[opcode.MOVB_R3_AW,		itype.MOVB,	op.R3,	op.AW],
 	//
 	[opcode.MOVB_AR1_R2,	itype.MOVB,	op.AR1B,	op.R2],	// Move r2 to address in r1
+	[opcode.MOVB_AR1_R3,	itype.MOVB,	op.AR1B,	op.R3],
+	[opcode.MOVB_AR2_R1,	itype.MOVB,	op.AR2B,	op.R1],
+	[opcode.MOVB_AR2_R3,	itype.MOVB,	op.AR2B,	op.R3],
+	[opcode.MOVB_AR3_R1,	itype.MOVB,	op.AR3B,	op.R1],
+	[opcode.MOVB_AR3_R2,	itype.MOVB,	op.AR3B,	op.R2],
+
+	[opcode.MOVB_R1_AR2,	itype.MOVB,	op.R1,	op.AR2B],	// Move data at AR1 into R2
+	[opcode.MOVB_R1_AR3,	itype.MOVB,	op.R1,	op.AR3B],
+	[opcode.MOVB_R2_AR1,	itype.MOVB,	op.R2,	op.AR1B],
+	[opcode.MOVB_R2_AR3,	itype.MOVB,	op.R2,	op.AR3B],
+	[opcode.MOVB_R3_AR1,	itype.MOVB,	op.R3,	op.AR1B],
+	[opcode.MOVB_R3_AR2,	itype.MOVB,	op.R3,	op.AR2B],
+
 	[opcode.MOVB_AW_BY,		itype.MOVB,	op.AW,	op.BY], // Move next byte to word address
 	//
 	[opcode.CMP_R1_R2,		itype.CMP,	op.R1,	op.R2],	// Compare registers.
@@ -164,11 +193,11 @@ var imap = [
 	[opcode.CMP_R3_R1,		itype.CMP,	op.R3,	op.R1],
 	[opcode.CMP_R3_R2,		itype.CMP,	op.R3,	op.R2],
 	[opcode.CMP_R1_WO,		itype.CMP,	op.R1,	op.WO], // Compare R1 to next word.
-	[opcode.CMP_R2_WO,		itype.CMP,	op.R1,	op.WO],
-	[opcode.CMP_R3_WO,		itype.CMP,	op.R1,	op.WO],
+	[opcode.CMP_R2_WO,		itype.CMP,	op.R2,	op.WO],
+	[opcode.CMP_R3_WO,		itype.CMP,	op.R3,	op.WO],
 	[opcode.CMP_R1_BY,		itype.CMP,	op.R1,	op.BY], // Compare R1 to next byte.
-	[opcode.CMP_R2_BY,		itype.CMP,	op.R1,	op.BY],
-	[opcode.CMP_R3_BY,		itype.CMP,	op.R1,	op.BY],
+	[opcode.CMP_R2_BY,		itype.CMP,	op.R2,	op.BY],
+	[opcode.CMP_R3_BY,		itype.CMP,	op.R3,	op.BY],
 	//
 	[opcode.INC_R1,			itype.INC,	op.R1,	null],	// Incriment
 	[opcode.INC_R2,			itype.INC,	op.R2,	null],
@@ -178,7 +207,7 @@ var imap = [
 	[opcode.DEC_R3,			itype.DEC,	op.R3,	null],
 	//
 	[opcode.JMPW,			itype.JMP,	op.WO,	null],
-	[opcode.JMPEQ,			itype.JMP,	op.WO,	null],
+	[opcode.JMPEQ,			itype.JEQ,	op.WO,	null],
 	//
 	[opcode.PUSHB_R1,		itype.PUB,	op.R1,	null],	// Push register Byte to stack
 	[opcode.PUSHB_R2,		itype.PUB,	op.R2,	null],

@@ -129,9 +129,13 @@ function compile(source)
 
 	refactorLabelsUsedInBytecode(byteCode);
 
+	/*
 	for (var k=0;k<labelList.length;k++) {
 		console.log("LL: "+labelList[k]);
 	}
+	*/
+
+	console.log("Finished compiling  " + lines.length + " lines to " + byteCode.length + " bytes.");
 
 	return byteCode;
 	//console.log(tokens);
@@ -181,10 +185,10 @@ function declareBytes(line)
 	var result = [], strMid="", curTok;
 	// Tokenise the line, preserving quoted text.
 	tokens = line.match(/\w+|"[^"]+"/g);
-	console.log("** declareBytes");
+	//console.log("** declareBytes");
 	for (var i=1;i<tokens.length;i++) {
 		curTok=tokens[i];
-		console.log(">" + i + ">"+curTok+"<");
+		//console.log(">" + i + ">"+curTok+"<");
 		if (isNaN(parseInt(curTok))===false)
 		{
 			result[result.length] = parseInt(curTok)|0;
@@ -198,8 +202,8 @@ function declareBytes(line)
 			}
 		}
 	}
-	console.log("** declareBytes end");
-	for (i=0;i<result.length;i++) { console.log(result[i]); }
+	//console.log("** declareBytes end");
+	//for (i=0;i<result.length;i++) { console.log(result[i]); }
 	return result;
 }
 
@@ -217,7 +221,7 @@ function scanLinesForLabels(lines)
 			// 1. Remove it from the source line.
 			// 2. Add a new row to the labelList.
 			if (tokens[t][tokens[t].length-1] == ":") {
-				console.log("Found a label: {" + tokens[t] + "}");
+				// console.log("Found a label: {" + tokens[t] + "}");
 				//console.log("Before: "+lines[i]);
 				// Remove label from the line.
 				lines[i] = lines[i].replace(tokens[t],'');
@@ -311,7 +315,7 @@ function findInstruction(iType, op1, op2)
 		}*/
 	}
 
-	console.log("No Matching instruction found.");
+	console.log("No Matching instruction found." + " iType:" + iType + " op1:" + op1 + " op2:" + op2);
 	return -1;
 }
 
@@ -413,7 +417,7 @@ function parseOperand(operand)
 	for (var i=0;i<labelList.length;i++)
 	{
 		if (labelList[i][0]==operand) {
-			console.log("LABEL USE FOUND!! " + operand);
+			//console.log("LABEL USE FOUND!! " + operand);
 
 			result[0] = op.WO; // word address
 			result[2] = 0xffffffff;
@@ -430,7 +434,7 @@ function parseOperand(operand)
 		for (var j=0;j<labelList.length;j++)
 		{
 			if (labelList[j][0]==strMid) {
-				console.log("LABEL (pointer) USE FOUND!! " + operand);
+				// console.log("LABEL (pointer) USE FOUND!! " + operand);
 
 				result[0] = op.AW; // word address
 				result[2] = 0xffffffff;
