@@ -28,17 +28,21 @@ function testProgram() {
 	var str = "";
 	//str += "movb r1, 11 \n";
 
-	//str += "inc r1 \n";
-	str += "bob: inc r1\n";
-	str += "movb r3,123 \n";
-	str += "movb [test],r3 \n";
-	str += "jmp nick \n";
-	str += "bum: \n";
-	str += "nick: inc r2\n";
-	//str += "bob: movb r2, [16]\n";
-	str += "jmp bob \n";
-	str += "test: \n";
-	//str += "jmp bob \n";
+	//str += 'inc r1 \n';
+
+	str += 'movb [ending],101 \n';
+	str += 'bob: inc r1\n';
+	str += 'movb r3,123 \n';
+	str += 'movb [test],r3 \n';
+	str += 'jmp nick \n';
+	str += 'bum: \n';
+	str += 'nick: inc r2\n';
+	//str += 'bob: movb r2, [16]\n";
+	str += 'jmp bob \n';
+	str += 'test: \n';
+	str += 'var1: db "nick",	12,0xff \n';
+	str += 'var2: db "Nick" \n';
+	str += 'ending: db 1,2,3,4,5,0xff \n';
 
 
 	//str += "inc r1 \n";

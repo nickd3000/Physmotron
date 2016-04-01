@@ -25,6 +25,7 @@ var opcode = { NO_OP: 0,
 	MOVB_R2_AW: 20,
 	MOVB_R3_AW: 21,
 	MOVB_AR1_R2: 22,	// Move r2 to address in r1
+	MOVB_AW_BY: 25,		// Move next byte to word address
 	CMP_R1_R2: 30,		// compare registers
 	CMP_R1_R3: 31,
 	CMP_R2_R1: 32,
@@ -154,6 +155,7 @@ var imap = [
 	[opcode.MOVB_R3_AW,		itype.MOVB,	op.R3,	op.AW],
 	//
 	[opcode.MOVB_AR1_R2,	itype.MOVB,	op.AR1B,	op.R2],	// Move r2 to address in r1
+	[opcode.MOVB_AW_BY,		itype.MOVB,	op.AW,	op.BY], // Move next byte to word address
 	//
 	[opcode.CMP_R1_R2,		itype.CMP,	op.R1,	op.R2],	// Compare registers.
 	[opcode.CMP_R1_R3,		itype.CMP,	op.R1,	op.R3],

@@ -10,6 +10,25 @@ var OP_AR3 = 6;
 var OP_NUM = 7;
 var OP_ANUM = 8;
 
+
+// Short answer describing 6502 use of labels.
+// http://forum.6502.org/viewtopic.php?t=945
+// Binary relocation proposal in 6502
+// http://www.6502.org/users/andre/o65/fileformat.html
+
+// proposed method for declaring data
+// pos:		db 0xff 			// db= define byte
+// list:	db 0x01,0x02,0x04
+// name:	db "nick",0,2,3
+// how to declare n bytes?
+// these need to be placed after our code, we could enforce data always being declared at the end,
+// or we could create a pre processor that moves db's to end of file?
+
+
+// org 0x100 // assembler directive - tells assembler where to store program.
+
+
+
 // Register labels [String Name, source line, binary location]
 var labelList = [];
 
@@ -63,6 +82,21 @@ function compile(source)
 		// Debug: print each token in line.
 		//for (var j=0;j<tokenCount;j++) console.log("Token:" + tokens[j]);
 
+
+		// We may have consumed a label statement which resulted in a blank line.
+		if (tokens[0]=="") continue;
+
+		// Hande data declarations.
+		if (tokens[0]=="db") {
+			compiledLine = declareBytes(lines[line]);
+
+			// Copied this from down below, should probs make it a function.
+			for (var j=0;j<compiledLine.length;j++) {
+				byteCode[byteCode.length]=compiledLine[j]|0;
+			}
+			continue;
+		}
+
 		op1 = null;
 		op2 = null;
 		oc = null;
@@ -70,8 +104,6 @@ function compile(source)
 		if (tokenCount>2) op2 = parseOperand(tokens[2]);
 		//console.log("OP1: "+op1 + "   OP2: "+op2);
 
-		// We may have consumed a label statement which resulted in a blank line.
-		if (tokens[0]=="") continue;
 
 		// Get instruction type id from string.
 		var itp = finditypeFromName(tokens[0].toLowerCase());
@@ -142,6 +174,34 @@ function refactorLabelsUsedInBytecode(bc)
 	}
 }
 
+// When the compiler detects a line with db (declare byte) at the start,
+// this function is called to parse the line.
+function declareBytes(line)
+{
+	var result = [], strMid="", curTok;
+	// Tokenise the line, preserving quoted text.
+	tokens = line.match(/\w+|"[^"]+"/g);
+	console.log("** declareBytes");
+	for (var i=1;i<tokens.length;i++) {
+		curTok=tokens[i];
+		console.log(">" + i + ">"+curTok+"<");
+		if (isNaN(parseInt(curTok))===false)
+		{
+			result[result.length] = parseInt(curTok)|0;
+		}
+
+		if (curTok.substring(0,1)=='"' && curTok.substring(curTok.length-1,curTok.length)=='"')
+		{
+			strMid = curTok.substring(1,curTok.length-1); // Extract the string between [ and ].
+			for (var c=0;c<strMid.length;c++) {
+				result[result.length] = strMid.charCodeAt(c);
+			}
+		}
+	}
+	console.log("** declareBytes end");
+	for (i=0;i<result.length;i++) { console.log(result[i]); }
+	return result;
+}
 
 function scanLinesForLabels(lines)
 {
