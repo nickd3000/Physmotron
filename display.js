@@ -18,9 +18,15 @@ var initDisplay = function ()
     id = ctx.getImageData(0, 0, 1, 1);
 	rowData  = ctx.createImageData(256,1);
 
+	ctx.imageSmoothingEnabled=false;
+
 	ctx.clearRect(0,0,250,250);
-	ctx.fillStyle="black";
+	ctx.fillStyle="green";
 	ctx.fillRect(0, 0, cw, ch);
+
+	//ctx.font = "8px monospace";
+	//ctx.fillStyle="white";
+	//ctx.fillText("100 Bytes free",0,8);
 
 	scanLine = 0;
 };
@@ -30,9 +36,10 @@ var initDisplay = function ()
 // palette memory 256*8*8*8
 
 // Draw a full scanline to the display.
-var tickDisplay = function ()
+function tickDisplay()
 {
 	"use strict";
+
 	var pixel=0, x4=0;
 	for (var x=0;x<256;x++) {
 		x4 = x*4;
@@ -42,7 +49,7 @@ var tickDisplay = function ()
 		rowData.data[x4+2] = ((pixel>>5)&7)*36;
 		rowData.data[x4+3] = toggle;//255;
 	}
-	ctx.putImageData(rowData,0,scanLine);
+	//ctx.putImageData(rowData,0,scanLine);
 	scanLine++;
 	if (scanLine>=256)
 	{
@@ -52,25 +59,23 @@ var tickDisplay = function ()
 	}
 
 	//.redraw();
-};
-/*var tickDisplay = function ()
-{
-	var pixel=0;
-	id.data[4]=255;
-	for (var x=0;x<256;x++) {
-		pixel = mem[1024+x+(256*scanLine)];
-		id.data[0] = ((pixel>>5)&7)*36;
-		id.data[1] = ((pixel>>2)&7)*36;
-		id.data[2] = (pixel&3)*85;
-		ctx.putImageData(id,x,scanLine);
-	}
-	scanLine++;
-	if (scanLine>=256) scanLine=0;
-};*/
+}
 
-var redrawScreen = function ()
+
+
+function redrawScreen()
 {
 	"use strict";
+	// Text mode.
+	if (mem[500]===0) {
+		//scanline++;
+		//if (scanLine>=255) {
+			 redrawTextMode();
+		//	 scanline=0;
+		// }
+		return;
+	}
+
 	scanLine = 0;
 	while (scanLine<255)
 	{
@@ -78,4 +83,15 @@ var redrawScreen = function ()
 	}
 	if (toggle==255) toggle=250;
 	else toggle=255;
-};
+}
+
+
+function redrawTextMode(){
+	ctx.font = "9px monospace";
+	ctx.fillStyle="white";
+	var char = "n";
+	for (var i=0;i<32*32;i++) {
+		char = String.fromCharCode(mem[600+i]);
+		ctx.fillText(char,(i%32)*8,((i/32)*8)+8);
+	}
+}

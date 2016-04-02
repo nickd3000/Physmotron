@@ -32,14 +32,18 @@ var opcode = { NO_OP: 0,
 	MOVB_AR3_R1: 26,
 	MOVB_AR3_R2: 27,
 
-	MOVB_R1_AR2: 28,	// Move data at AR2 into R1
-	MOVB_R1_AR3: 29,
-	MOVB_R2_AR1: 30,
-	MOVB_R2_AR3: 31,
-	MOVB_R3_AR1: 32,
-	MOVB_R3_AR2: 33,
+	MOVB_AR1_BY: 28,	// Move byte to address of R1
+	MOVB_AR2_BY: 29,
+	MOVB_AR3_BY: 30,
 
-	MOVB_AW_BY: 25,		// Move next byte to word address
+	MOVB_R1_AR2: 40,	// Move data at AR2 into R1
+	MOVB_R1_AR3: 41,
+	MOVB_R2_AR1: 42,
+	MOVB_R2_AR3: 43,
+	MOVB_R3_AR1: 44,
+	MOVB_R3_AR2: 45,
+
+	MOVB_AW_BY: 46,		// Move next byte to word address
 	CMP_R1_R2: 60,		// compare registers
 	CMP_R1_R3: 61,
 	CMP_R2_R1: 62,
@@ -81,7 +85,9 @@ var opcode = { NO_OP: 0,
 	ADD_R3_R1: 174,
 	ADD_R3_R2: 175,
 	SYSCALL: 200,		// Syscall, next byte specifies what syscall.
-	BRK: 201,			// Set Break flag
+	CAL: 201,
+	RET: 202,
+	BRK: 221,			// Set Break flag
 };
 
 // Id's used for source and dest for instructions.
@@ -119,8 +125,9 @@ var itype = {
 	POW: 23,		// Pop word.
 	ADD: 24,
 	SYS: 25,
-	BRK: 26,
-
+	CAL: 26,
+	RET: 27,
+	BRK: 28,
 };
 
 // NOTE: the above instruction types should represent groups of instructions
@@ -141,6 +148,8 @@ var instNames = [
 	[itype.POW, 'popw'],
 	[itype.ADD, 'add'],
 	[itype.SYS, 'sys', 'syscall'],
+	[itype.CAL, 'cal', 'call'],
+	[itype.RET, 'ret', 'return'],
 	[itype.BRK, 'brk', 'break'],
 ];
 
@@ -176,6 +185,10 @@ var imap = [
 	[opcode.MOVB_AR2_R3,	itype.MOVB,	op.AR2B,	op.R3],
 	[opcode.MOVB_AR3_R1,	itype.MOVB,	op.AR3B,	op.R1],
 	[opcode.MOVB_AR3_R2,	itype.MOVB,	op.AR3B,	op.R2],
+
+	[opcode.MOVB_AR1_BY,	itype.MOVB,	op.AR1B,	op.BY],	// Move byte to address of register
+	[opcode.MOVB_AR2_BY,	itype.MOVB,	op.AR2B,	op.BY],
+	[opcode.MOVB_AR3_BY,	itype.MOVB,	op.AR3B,	op.BY],
 
 	[opcode.MOVB_R1_AR2,	itype.MOVB,	op.R1,	op.AR2B],	// Move data at AR1 into R2
 	[opcode.MOVB_R1_AR3,	itype.MOVB,	op.R1,	op.AR3B],
@@ -231,6 +244,8 @@ var imap = [
 	[opcode.ADD_R3_R2,		itype.ADD,	op.R3,	op.R2],
 	//
 	[opcode.SYSCALL,		itype.SYS,	op.BY,	null],
+	[opcode.CAL,			itype.CAL,	op.WO,	null],
+	[opcode.RET,			itype.RET,	null,	null],
 	[opcode.BRK,			itype.BRK,	null,	null],
 ];
 

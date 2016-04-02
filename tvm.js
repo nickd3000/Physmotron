@@ -12,63 +12,18 @@ var hw_pc = 0;
 var hw_stackTop = memSize-100;
 var hw_sp = hw_stackTop;
 var hw_flags = 0;
+var hw_screenMode = 500;
+var hw_cursorX = 501;
+var hw_cursorY = 502;
+var hw_screenTextLocation = 600;
+
 
 // Bit indexes into the flags register.
 var sign_flag = 1<<0;
 var zero_flag = 1<<1;
 var break_flag = 1<<2;
 
-// ISSUE:
-// how can i have an instruction that takes a byte
-// from memory and stores it in a register?
-// need a way to distinguish from fetching a byte
-// and fetching a word...
 
-function testProgram() {
-	var NL=" \n", str = "";
-	//str += "movb r1, 11 \n";
-
-	//str += 'inc r1 \n';
-
-	//str = 	'movb r2,[r1b]';
-	str = 	'movw r1,text' + NL +
-			'loopStart:' + NL +
-			'movb r2,[r1b]' + NL +
-			'cmp r2, 0' + NL +
-			'jeq end' + NL +
-			'pushb r2' + NL +
-			'sys 3' + NL +
-			'inc r1' + NL +
-
-			'jmp loopStart' + NL +
-			'end: brk' + NL +
-			'text: db "Hello World.",0' + NL;
-
-
-	/*
-	str += 'movb [ending],101 \n';
-	str += 'bob: inc r1\n';
-	str += 'movb r3,123 \n';
-	str += 'movb [test],r3 \n';
-	str += 'jmp nick \n';
-	str += 'bum: \n';
-	str += 'nick: inc r2\n';
-	//str += 'bob: movb r2, [16]\n";
-	str += 'jmp bob \n';
-	str += 'test: \n';
-	str += 'var1: db "nick",	12,0xff \n';
-	str += 'var2: db "Nick" \n';
-	str += 'ending: db 1,2,3,4,5,0xff \n';
-	*/
-
-	//str += "inc r1 \n";
-	//str += "mov [r1b], r2, \n";
-	//str += "inc r2 \n";
-	//str += "jmp w7 \n";
-	//str += "pushb 55 \n";
-	//str += "popb r3 \n";
-	return str;
-}
 
 // Load bytecode from an int array to a memory location.
 function loadBytecode(bc, addr) {
@@ -84,66 +39,34 @@ function main() {
 
 	for (var m=0;m<memSize;m++) mem[m]=0;
 
-	loadBytecode(compile(testProgram()),0);
-	//dumpMemory();
+	mem[600]=78;
+	mem[601]=105;
+	mem[602]=99;
+	mem[603]=107;
 
+	loadBytecode(compile(getSampleAssemblerCode(4)),0);
 
-	for (var i=0;i<260;i++) {
-		//displayRegisters();
-		tick();
+	var runWithDisplay = true;
 
-	}
-	//displayRegisters();
-	//dumpMemory();
-
-	return; ////////////////// BAIL
-
-
-	initDisplay();
-	//setTimeout(initDisplay,10);
-	//redraw();
-
-	// Test
-	//console.log(findInstructionInMap(1));
-
-
-
-	//displayRegisters();
-	//loadTestBinary(10);
-
-	redrawScreen();
-
-	//for (var i=0;i<50;i++) tick();
-	/* timing
-	var t1 = performance.now();
-	for (var j=0;j<1000000;j++) {
-		tick();
-	}
-	var t2 = performance.now();
-	console.log("Time:" + (t2-t1) +" ms");
-	*/
-
-/*
-	for (var d=0;d<256*50;d++) {
-		for (var i=0;i<50;i++) {
-			tick();
+	// Debug mode.
+	if (runWithDisplay===false) {
+		for (var i=0;i<2500;i++) {
 			//displayRegisters();
-			//setTimeout(tickDisplay,10);
-
+			tick();
 		}
-		requestAnimationFrame(redrawScreen);
-		//setTimeout(tickDisplay,10);
-		//redrawScreen();
-		//redraw();
+		//displayRegisters();
+		dumpMemory();
 	}
-	*/
 
-	// Start the machine running.
-	requestAnimationFrame(draw);
+	// Full run with display.
+	if (runWithDisplay===true) {
+		initDisplay();
+		redrawScreen();
 
+		// Start the machine running.
+		requestAnimationFrame(draw);
+	}
 
-	//redrawScreen();
-	//dumpMemory();
 }
 
 function draw() {
@@ -151,7 +74,7 @@ function draw() {
 	requestAnimationFrame(draw);
 
 	// C64 can do around 20000 CPU cycles per frame.
-	for (var i=0;i<2000;i++) {
+	for (var i=0;i<20000;i++) {
 		tick();
 		//displayRegisters();
 	}
@@ -233,6 +156,8 @@ function tick()
 		case itype.POW: setTarget(iOp1,popWord()); break;
 		case itype.ADD: setTarget(iOp1,(getSource(iOp1)+getSource(iOp2))&0xffff); break;
 		case itype.SYS: sysCall(getSource(iOp1)); break;
+		case itype.CAL: pushWord(hw_pc+4); hw_pc = getSource(op.WO); break;
+		case itype.RET: hw_pc=popWord(); break;
 		case itype.BRK: setFlag(break_flag,1); break;
 	}
 }
@@ -589,3 +514,22 @@ function loadTestBinary(number)
 	}
 
 }
+
+
+
+/*
+// INIT ROM
+function initRom(){
+
+
+	mangle("  xxxx  ");
+	mangle(" xx  xx ");
+	mangle(" xX  xx ");
+	mangle(" xXXxxx ");
+	mangle(" XX  xx ");
+	mangle(" XX  xx ");
+	mangle(" XX  xx ");
+	mangle("        ");
+
+}
+*/
