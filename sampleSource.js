@@ -4,6 +4,40 @@ function getSampleAssemblerCode(id) {
 	var NL=" \n", str = "";
 
 
+
+		// Wait for scanline.
+		if (id==7)
+		{
+			str = 'start: inc r1' + NL +
+						'and r1, 0xff' + NL +
+						'movb [503], r1' + NL +
+						'inc r2' + NL +
+						'pushb r2' + NL +
+						'pushb 5' + NL +
+						'pushw text1' + NL +
+						'sys b5' + NL +
+						'' + NL +
+						'' + NL +
+						'' + NL +
+						'wait: movb r3,[504]' + NL +
+						'cmp r3,254' + NL +
+						'jeq start' + NL +
+						'jmp wait' + NL +
+						'' + NL +
+						'text1: db " Hello ",0';
+			return str;
+		}
+
+		// Simple scanline colour change.
+		if (id==6)
+		{
+			str = 	'start: inc r1' + NL +
+					'and r1, 0x0f' + NL +
+					'movb [503], r1' + NL +
+					'jmp start';
+			return str;
+		}
+
 	// Test SYS_TEXT
 	if (id==5)
 	{
@@ -12,14 +46,24 @@ function getSampleAssemblerCode(id) {
 				'pushw text2' + NL +
 				'sys b5' + NL +
 				'pushb b10' + NL +
-			   'pushb b20' + NL +
-			   'pushw text1' + NL +
-			   'sys b5' + NL +
-			   'movb r3,[504]' + NL +
-			   'movb [503],r3' + NL +
+				'pushb b20' + NL +
+				'pushw text1' + NL +
+				'sys b5' + NL +
+				'pushb b10' + NL +
+				'pushb b21' + NL +
+				'pushw text1' + NL +
+				'sys b5' + NL +
+				'movb r1,[504]' + NL +
+				'and r1,31' + NL +
+				'pushb r1' + NL +
+				'pushb b22' + NL +
+				'pushw text1' + NL +
+				'sys b5' + NL +
+				'movb r3,[504]' + NL +
+				'movb [503],r3' + NL +
 				'jmp start' + NL +
-				'text1: db "Oh Man!.",0' + NL +
-				'text2: db "Cool!.  ",0' + NL;
+				'text1: db " Oh Man!. ",0' + NL +
+				'text2: db " Cool!.   ",0' + NL;
 		return str;
 	}
 

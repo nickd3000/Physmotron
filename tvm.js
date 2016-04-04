@@ -9,7 +9,7 @@ var hw_r1 = 0;
 var hw_r2 = 0;
 var hw_r3 = 0;
 var hw_pc = 0;
-var hw_stackTop = memSize-100;
+var hw_stackTop = memSize-0xff;
 var hw_sp = hw_stackTop;
 var hw_flags = 0;
 var hw_screenMode = 500;
@@ -55,7 +55,7 @@ function main() {
 
 	_loadFont(hw_fontLocation);
 
-	loadBytecode(compile(getSampleAssemblerCode(5)),0);
+	loadBytecode(compile(getSampleAssemblerCode(7)),0);
 
 	var runWithDisplay = true;
 
@@ -144,7 +144,7 @@ function tick()
 			setFlag(zero_flag,0);
 			setFlag(sign_flag,0);
 			if (result===0) setFlag(zero_flag,1);
-			else if (result>0) setFlag(sign_flag,1);
+			else if (result<0) setFlag(sign_flag,1);
 			else setFlag(sign_flag,0);
 			break;
 		case itype.INC: setTarget(iOp1, getSource(iOp1)+1, null);	break;
@@ -162,6 +162,14 @@ function tick()
 			if (getFlag(zero_flag)) hw_pc = getSource(op.WO);
 			else hw_pc+=4; // skip word.
 			break;
+		case itype.JLT:
+			if (getFlag(sign_flag)>0) hw_pc = getSource(op.WO);
+			else hw_pc+=4; // skip word.
+			break;
+		case itype.JGT:
+			if (getFlag(sign_flag)==0) hw_pc = getSource(op.WO);
+			else hw_pc+=4; // skip word.
+			break;
 		case itype.PUB: pushByte(getSource(iOp1)); break;
 		case itype.PUW: pushWord(getSource(iOp1)); break;
 		case itype.POB: setTarget(iOp1,popByte()); break;
@@ -171,6 +179,7 @@ function tick()
 		case itype.CAL: pushWord(hw_pc+4); hw_pc = getSource(op.WO); break;
 		case itype.RET: hw_pc=popWord(); break;
 		case itype.BRK: setFlag(break_flag,1); break;
+		case itype.AND: setTarget(iOp1,(getSource(iOp1)&getSource(iOp2))&0xffff); break;
 	}
 }
 

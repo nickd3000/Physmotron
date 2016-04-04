@@ -84,6 +84,21 @@ var opcode = { NO_OP: 0,
 	ADD_R2_R3: 173,
 	ADD_R3_R1: 174,
 	ADD_R3_R2: 175,
+	// todo - add more adds
+
+	AND_R1_R2: 185,		// AND : R1: R1 & R2
+	AND_R1_R3: 186,
+	AND_R2_R1: 187,
+	AND_R2_R3: 188,
+	AND_R3_R1: 189,
+	AND_R3_R2: 190,
+	AND_R1_WO: 191,		// AND Reg with word
+	AND_R2_WO: 192,
+	AND_R3_WO: 193,
+	AND_R1_BY: 194,		// AND Reg with byte
+	AND_R2_BY: 195,
+	AND_R3_BY: 196,
+
 	SYSCALL: 200,		// Syscall, next byte specifies what syscall.
 	CAL: 201,
 	RET: 202,
@@ -119,6 +134,8 @@ var itype = {
 	DEC: 5,
 	JMP: 6,		// Jump
 	JEQ: 7,		// Jump if equal.
+	JLT: 8,		// Jump if equal.
+	JGT: 9,		// Jump if equal.
 	PUB: 20,		// Push byte
 	PUW: 21,		// Push word (4 bytes)
 	POB: 22,		// Pop byte
@@ -128,6 +145,7 @@ var itype = {
 	CAL: 26,
 	RET: 27,
 	BRK: 28,
+	AND: 29,
 };
 
 // NOTE: the above instruction types should represent groups of instructions
@@ -142,6 +160,8 @@ var instNames = [
 	[itype.DEC, 'dec'],
 	[itype.JMP, 'jmp', 'jump'],
 	[itype.JEQ, 'jeq'],
+	[itype.JLT, 'jlt'],
+	[itype.JGT, 'jgt'],
 	[itype.PUB, 'pushb'],
 	[itype.PUW, 'pushw'],
 	[itype.POB, 'popb'],
@@ -151,6 +171,7 @@ var instNames = [
 	[itype.CAL, 'cal', 'call'],
 	[itype.RET, 'ret', 'return'],
 	[itype.BRK, 'brk', 'break'],
+	[itype.AND, 'and'],
 ];
 
 
@@ -221,6 +242,8 @@ var imap = [
 	//
 	[opcode.JMPW,			itype.JMP,	op.WO,	null],
 	[opcode.JMPEQ,			itype.JEQ,	op.WO,	null],
+	[opcode.JMPLT,			itype.JLT,	op.WO,	null],
+	[opcode.JMPGT,			itype.JGT,	op.WO,	null],
 	//
 	[opcode.PUSHB_R1,		itype.PUB,	op.R1,	null],	// Push register Byte to stack
 	[opcode.PUSHB_R2,		itype.PUB,	op.R2,	null],
@@ -242,6 +265,22 @@ var imap = [
 	[opcode.ADD_R2_R3,		itype.ADD,	op.R2,	op.R3],
 	[opcode.ADD_R3_R1,		itype.ADD,	op.R3,	op.R1],
 	[opcode.ADD_R3_R2,		itype.ADD,	op.R3,	op.R2],
+
+	// NEW
+	[opcode.AND_R1_R2,		itype.AND,	op.R1,	op.R2],	// AND : R1: R1 & R2
+	[opcode.AND_R1_R3,		itype.AND,	op.R1,	op.R3],
+	[opcode.AND_R2_R1,		itype.AND,	op.R2,	op.R1],
+	[opcode.AND_R2_R3,		itype.AND,	op.R2,	op.R3],
+	[opcode.AND_R3_R1,		itype.AND,	op.R3,	op.R1],
+	[opcode.AND_R3_R2,		itype.AND,	op.R3,	op.R2],
+	[opcode.AND_R1_WO,		itype.AND,	op.R1,	op.WO],
+	[opcode.AND_R2_WO,		itype.AND,	op.R2,	op.WO],
+	[opcode.AND_R3_WO,		itype.AND,	op.R3,	op.WO],
+	[opcode.AND_R1_BY,		itype.AND,	op.R1,	op.BY],
+	[opcode.AND_R2_BY,		itype.AND,	op.R2,	op.BY],
+	[opcode.AND_R3_BY,		itype.AND,	op.R3,	op.BY],
+
+
 	//
 	[opcode.SYSCALL,		itype.SYS,	op.BY,	null],
 	[opcode.CAL,			itype.CAL,	op.WO,	null],
