@@ -4,6 +4,26 @@ function getSampleAssemblerCode(id) {
 	var NL=" \n", str = "";
 
 
+	// Test SYS_TEXT
+	if (id==5)
+	{
+		str = 	'start: pushb b10' + NL +
+				'pushb b20' + NL +
+				'pushw text2' + NL +
+				'sys b5' + NL +
+				'pushb b10' + NL +
+			   'pushb b20' + NL +
+			   'pushw text1' + NL +
+			   'sys b5' + NL +
+			   'movb r3,[504]' + NL +
+			   'movb [503],r3' + NL +
+				'jmp start' + NL +
+				'text1: db "Oh Man!.",0' + NL +
+				'text2: db "Cool!.  ",0' + NL;
+		return str;
+	}
+
+
 	// string print function.
 	if (id==4)
 	{

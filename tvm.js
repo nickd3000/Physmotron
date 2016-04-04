@@ -2,7 +2,7 @@
 // Hardware memory.
 
 // TODO: move machine variables to a machine structure.
-var memSize = 1024+(256*256)+1024;
+var memSize = 1024*128;
 var mem = new Uint8Array(memSize);
 // Registers
 var hw_r1 = 0;
@@ -15,7 +15,15 @@ var hw_flags = 0;
 var hw_screenMode = 500;
 var hw_cursorX = 501;
 var hw_cursorY = 502;
-var hw_screenTextLocation = 600;
+var hw_colBG = 503;
+var hw_scanLine = 504;
+var hw_screenPixelLocation = 4096;
+var hw_screenPixelSize = 65536;
+var hw_screenTextLocation = 4096-2048; // 1024
+var hw_screenTextSize = 1024;
+var hw_fontLocation = 4096-1024; //320b
+var hw_fontSize = 320;
+
 
 
 // Bit indexes into the flags register.
@@ -39,12 +47,15 @@ function main() {
 
 	for (var m=0;m<memSize;m++) mem[m]=0;
 
-	mem[600]=78;
-	mem[601]=105;
-	mem[602]=99;
-	mem[603]=107;
+	mem[hw_screenTextLocation]=78;
+	mem[hw_screenTextLocation+1]=105;
+	mem[hw_screenTextLocation+2]=99;
+	mem[hw_screenTextLocation+3]=107;
+	for (var n=hw_screenTextLocation;n<hw_screenTextLocation+250;n++) mem[n]=32+(n%128);
 
-	loadBytecode(compile(getSampleAssemblerCode(4)),0);
+	_loadFont(hw_fontLocation);
+
+	loadBytecode(compile(getSampleAssemblerCode(5)),0);
 
 	var runWithDisplay = true;
 
@@ -73,15 +84,16 @@ function draw() {
 
 	requestAnimationFrame(draw);
 
-	// C64 can do around 20000 CPU cycles per frame.
-	for (var i=0;i<20000;i++) {
-		tick();
-		//displayRegisters();
+	for (var j=0;j<0xff;j++) {
+		// C64 can do around 20000 CPU cycles per frame.
+		for (var i=0;i<10;i++) {
+			tick();
+			//displayRegisters();
+		}
+
+		//for (var sl=0;sl<10;sl++) tickDisplay();
+		redrawScreen(1);
 	}
-
-	//for (var sl=0;sl<10;sl++) tickDisplay();
-	redrawScreen();
-
 }
 
 function tick()
@@ -517,19 +529,12 @@ function loadTestBinary(number)
 
 
 
-/*
+
 // INIT ROM
 function initRom(){
 
+}
 
-	mangle("  xxxx  ");
-	mangle(" xx  xx ");
-	mangle(" xX  xx ");
-	mangle(" xXXxxx ");
-	mangle(" XX  xx ");
-	mangle(" XX  xx ");
-	mangle(" XX  xx ");
-	mangle("        ");
+function loadFont() {
 
 }
-*/

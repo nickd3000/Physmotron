@@ -229,7 +229,7 @@ var imap = [
 	[opcode.PUSHW_R2,		itype.PUW,	op.R2,	null],
 	[opcode.PUSHW_R3,		itype.PUW,	op.R3,	null],
 	[opcode.PUSHB,			itype.PUB,	op.BY,	null],	// Push next byte to stack
-	[opcode.PUSHW,			itype.PUB,	op.WO,	null],	// Push next byte to stack
+	[opcode.PUSHW,			itype.PUW,	op.WO,	null],	// Push next byte to stack
 	[opcode.POPB_R1,		itype.POB,	op.R1,	null],
 	[opcode.POPB_R2,		itype.POB,	op.R2,	null],
 	[opcode.POPB_R3,		itype.POB,	op.R3,	null],
