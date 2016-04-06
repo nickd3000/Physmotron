@@ -1,6 +1,8 @@
 // instructions.js
 //'use strict';
 
+// http://www.masswerk.at/6502/6502_instruction_set.html
+
 // Machine instruction definitions.
 
 // TODO: split up mov into byte and word operations?
@@ -18,9 +20,9 @@ var opcode = { NO_OP: 0,
 	MOVW_R2_R3: 13,
 	MOVW_R3_R1: 14,
 	MOVW_R3_R2: 15,
-	MOVB_AW_R1: 16,		// Move r1 to word address
-	MOVB_AW_R2: 17,
-	MOVB_AW_R3: 18,
+	MOVB_AB_R1: 16,		// Move r1 to word address
+	MOVB_AB_R2: 17,
+	MOVB_AB_R3: 18,
 	MOVB_R1_AW: 19,		// Move byte at word address to R1
 	MOVB_R2_AW: 20,
 	MOVB_R3_AW: 21,
@@ -43,7 +45,9 @@ var opcode = { NO_OP: 0,
 	MOVB_R3_AR1: 44,
 	MOVB_R3_AR2: 45,
 
-	MOVB_AW_BY: 46,		// Move next byte to word address
+	MOVB_AB_BY: 46,		// Move next byte to byte address
+	MOVB_AB_AB: 47,		// Move next byte to byte address
+
 	CMP_R1_R2: 60,		// compare registers
 	CMP_R1_R3: 61,
 	CMP_R2_R1: 62,
@@ -56,6 +60,9 @@ var opcode = { NO_OP: 0,
 	CMP_R1_BY: 69,		// Compare R1 to next byte
 	CMP_R2_BY: 70,
 	CMP_R3_BY: 71,
+
+	CMP_AB_BY: 72,	// Experimental
+
 	INC_R1: 90,		// Incriment
 	INC_R2: 91,
 	INC_R3: 92,
@@ -192,13 +199,13 @@ var imap = [
 	[opcode.MOVW_R3_R1,		itype.MOVW,	op.R3,	op.R1],
 	[opcode.MOVW_R3_R2,		itype.MOVW,	op.R3,	op.R2],
 	//
-	[opcode.MOVB_AW_R1,		itype.MOVB,	op.AW,	op.R1],	// Move byte r1 to address
-	[opcode.MOVB_AW_R2,		itype.MOVB,	op.AW,	op.R2],
-	[opcode.MOVB_AW_R3,		itype.MOVB,	op.AW,	op.R3],
+	[opcode.MOVB_AB_R1,		itype.MOVB,	op.AB,	op.R1],	// Move byte r1 to address
+	[opcode.MOVB_AB_R2,		itype.MOVB,	op.AB,	op.R2],
+	[opcode.MOVB_AB_R3,		itype.MOVB,	op.AB,	op.R3],
 	//
-	[opcode.MOVB_R1_AW,		itype.MOVB,	op.R1,	op.AW],	// Move byte at address to r1.
-	[opcode.MOVB_R2_AW,		itype.MOVB,	op.R2,	op.AW],
-	[opcode.MOVB_R3_AW,		itype.MOVB,	op.R3,	op.AW],
+	[opcode.MOVB_R1_AW,		itype.MOVB,	op.R1,	op.AB],	// Move byte at address to r1.
+	[opcode.MOVB_R2_AW,		itype.MOVB,	op.R2,	op.AB],
+	[opcode.MOVB_R3_AW,		itype.MOVB,	op.R3,	op.AB],
 	//
 	[opcode.MOVB_AR1_R2,	itype.MOVB,	op.AR1B,	op.R2],	// Move r2 to address in r1
 	[opcode.MOVB_AR1_R3,	itype.MOVB,	op.AR1B,	op.R3],
@@ -218,7 +225,9 @@ var imap = [
 	[opcode.MOVB_R3_AR1,	itype.MOVB,	op.R3,	op.AR1B],
 	[opcode.MOVB_R3_AR2,	itype.MOVB,	op.R3,	op.AR2B],
 
-	[opcode.MOVB_AW_BY,		itype.MOVB,	op.AW,	op.BY], // Move next byte to word address
+	[opcode.MOVB_AB_BY,		itype.MOVB,	op.AB,	op.BY], // Move next byte to word address
+	[opcode.MOVB_AB_AB,		itype.MOVB,	op.AB,	op.AB], // Move byte at address to byte at address
+
 	//
 	[opcode.CMP_R1_R2,		itype.CMP,	op.R1,	op.R2],	// Compare registers.
 	[opcode.CMP_R1_R3,		itype.CMP,	op.R1,	op.R3],
@@ -232,6 +241,10 @@ var imap = [
 	[opcode.CMP_R1_BY,		itype.CMP,	op.R1,	op.BY], // Compare R1 to next byte.
 	[opcode.CMP_R2_BY,		itype.CMP,	op.R2,	op.BY],
 	[opcode.CMP_R3_BY,		itype.CMP,	op.R3,	op.BY],
+
+	[opcode.CMP_AB_BY,		itype.CMP,	op.AB,	op.BY], // Experimental.
+
+
 	//
 	[opcode.INC_R1,			itype.INC,	op.R1,	null],	// Incriment
 	[opcode.INC_R2,			itype.INC,	op.R2,	null],

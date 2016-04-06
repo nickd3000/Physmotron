@@ -1,0 +1,12 @@
+TVM Notes
+
+[ ] Allow comments
+[ ] Consume tab in web form
+
+
+How to distinguish bytes and words inopcodes
+
+mov byte [label], byte 123
+push byte [addr]
+pop word [addr]
+cmp byte[addr], byte 0xff

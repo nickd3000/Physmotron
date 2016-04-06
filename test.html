@@ -6,13 +6,24 @@
 <script src="display.js"></script>
 <script src="compiler.js"></script>
 <script src="sampleSource.js"></script>
+<script src="webControls.js"></script>
 <script src="rom.js"></script>
 <script src="tvm.js"></script>
 
 </head>
 <body onload="main()">
-	<H1></h1>
 
-	<canvas id="canvas" width="256" height="256">
+	<canvas id="canvas" width="256" height="256"></canvas>
+
+	<textarea id="source" spellcheck="false" rows="20" cols="80">
+movb r1,2
+start: movb [503],r1
+inc r1
+jmp start
+brk
+	</textarea>
+
+	<button onclick="webCompile()">Compile</button>
+<div id="fps">fps</div>
 
 </body>

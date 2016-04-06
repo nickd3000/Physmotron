@@ -24,14 +24,15 @@ var hw_screenTextSize = 1024;
 var hw_fontLocation = 4096-1024; //320b
 var hw_fontSize = 320;
 
-
+var fpsLastLoop = new Date();
+var fpsCount = 0;
 
 // Bit indexes into the flags register.
 var sign_flag = 1<<0;
 var zero_flag = 1<<1;
 var break_flag = 1<<2;
 
-
+var stopAnimation = false;
 
 // Load bytecode from an int array to a memory location.
 function loadBytecode(bc, addr) {
@@ -42,10 +43,22 @@ function loadBytecode(bc, addr) {
 	}
 }
 
+function resetMachine() {
+	for (var m=0;m<memSize;m++) mem[m]=0|0;
+	_loadFont(hw_fontLocation);
+	hw_r1 = 0;
+	hw_r2 = 0;
+	hw_r3 = 0;
+	hw_pc = 0;
+	hw_stackTop = memSize-0xff;
+	hw_sp = hw_stackTop;
+	hw_flags = 0;
+}
+
 function main() {
 	"use strict";
 
-	for (var m=0;m<memSize;m++) mem[m]=0;
+	resetMachine();
 
 	mem[hw_screenTextLocation]=78;
 	mem[hw_screenTextLocation+1]=105;
@@ -53,9 +66,7 @@ function main() {
 	mem[hw_screenTextLocation+3]=107;
 	for (var n=hw_screenTextLocation;n<hw_screenTextLocation+250;n++) mem[n]=32+(n%128);
 
-	_loadFont(hw_fontLocation);
-
-	loadBytecode(compile(getSampleAssemblerCode(7)),0);
+	loadBytecode(compile(getSampleAssemblerCode(8)),0);
 
 	var runWithDisplay = true;
 
@@ -80,9 +91,20 @@ function main() {
 
 }
 
+
 function draw() {
 
+	var fpsThisLoop = new Date();
+	var fps = 1000 / (fpsThisLoop - fpsLastLoop);
+	fpsLastLoop = fpsThisLoop;
+	fpsCount++;
+	if (fpsCount>30) {
+		fpsCount=0;
+		document.getElementById("fps").textContent = (fps|0+" fps");
+	}
+
 	requestAnimationFrame(draw);
+
 
 	for (var j=0;j<0xff;j++) {
 		// C64 can do around 20000 CPU cycles per frame.
@@ -109,6 +131,7 @@ function tick()
 
 	if (mapI===undefined) {
 		console.log("VM ERROR: Instruction not found at byte " + hw_pc);
+		setFlag(break_flag,1);
 		var trap = 1;
 	}
 
@@ -122,21 +145,26 @@ function tick()
 	switch(iType) {
 		case itype.MOVB:
 		case itype.MOVW:
-			var addr=null;
-			if (iOp1===op.AB) addr=getSource(op.BY);
-			if (iOp1===op.AW) addr=getSource(op.WO);
+			var addr1=null, addr2=null;
+			if (iOp1===op.AB) addr1=getSource(op.WO); // Pointers are always words.
+			if (iOp1===op.AW) addr1=getSource(op.WO);
+			if (iOp2===op.AB) addr2=getSource(op.WO);
+			if (iOp2===op.AW) addr2=getSource(op.WO);
+			var srcVal = getSource(iOp2,addr2);
 
+			setTarget(iOp1,srcVal,addr1);
+			/*
 			if (iOp2===op.AR1B || iOp2===op.AR2B || iOp2===op.AR3B) {
 				 //addr=getSource(op.WO);
-				 setTarget(iOp1, getSource(iOp2,addr), null);
+				 setTarget(iOp1, getSource(iOp2,addr2), null);
 			}
 			else if (iOp2===op.AB || iOp2===op.AW ) {
 				 addr=getSource(op.WO);
-				 setTarget(iOp1, getSource(iOp2,addr), null);
+				 setTarget(iOp1, getSource(iOp2,addr2), null);
 			}
 			else {
-				 setTarget(iOp1, getSource(iOp2,null), addr);
-			}
+				 setTarget(iOp1, getSource(iOp2,null), addr1);
+			}*/
 
 		break;
 		case itype.CMP:
@@ -167,7 +195,7 @@ function tick()
 			else hw_pc+=4; // skip word.
 			break;
 		case itype.JGT:
-			if (getFlag(sign_flag)==0) hw_pc = getSource(op.WO);
+			if (getFlag(sign_flag)===0) hw_pc = getSource(op.WO);
 			else hw_pc+=4; // skip word.
 			break;
 		case itype.PUB: pushByte(getSource(iOp1)); break;
@@ -311,8 +339,8 @@ function setTarget (trg, val, addr)
 		case op.FL:	hw_flags = val; break;
 
 		// We need two vars for these operations...
-		case op.AB:	mem[addr] = val; break;
-		case op.AW:	mem[addr] = val; break;
+		case op.AB:	storeByte(addr,val); break;
+		case op.AW:	storeWord(addr,val); break;
 		//case TBY:	 break;	// TODO: throw an error if we try to write to a constant.
 		//case TWO:	 break;
 	}

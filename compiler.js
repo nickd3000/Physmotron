@@ -42,6 +42,11 @@ function compile(source)
 	"use strict";
 	var byteCode = [];
 	var compiledLine = [];
+	var sourceToCodeMap = [];
+
+	// reset these:
+	labelList = [];
+	labelUsedList = [];
 
 /*
 	var source = "";
@@ -72,6 +77,8 @@ function compile(source)
 	var op1,op2,oc;
 	for (var line = 0;line<lineCount;line++)
 	{
+		sourceToCodeMap[line]=[null,null];
+
 		registerCurrentLineWithLabels(line, byteCode.length);
 
 		if (lines[line]==="") continue;
@@ -84,7 +91,7 @@ function compile(source)
 
 
 		// We may have consumed a label statement which resulted in a blank line.
-		if (tokens[0]=="") continue;
+		if (tokens[0]==="") continue;
 
 		// Hande data declarations.
 		if (tokens[0]=="db") {
@@ -100,8 +107,30 @@ function compile(source)
 		op1 = null;
 		op2 = null;
 		oc = null;
-		if (tokenCount>1) op1 = parseOperand(tokens[1]);
-		if (tokenCount>2) op2 = parseOperand(tokens[2]);
+		var isWord=false;
+		var ti=1; // token iterator.
+		for (ti=1;ti<tokenCount;ti++) {
+			if (tokens[ti]=="byte") {
+				 isWord=false;
+				 ti++;
+			 }
+			 else if (tokens[ti]=="word") {
+				 isWord=true;
+				 ti++;
+			 }
+			 if (ti==tokenCount) break;
+			 if (op1===null) {
+				  op1 = parseOperand(tokens[ti], isWord);
+				  isWord=false;
+			  }
+			 else {  op2 = parseOperand(tokens[ti], isWord);
+				 isWord = false;
+			 }
+		}
+
+		// Keep old method for now...
+		//if (tokenCount>1) op1 = parseOperand(tokens[1]);
+		//if (tokenCount>2) op2 = parseOperand(tokens[2]);
 		//console.log("OP1: "+op1 + "   OP2: "+op2);
 
 
@@ -120,10 +149,13 @@ function compile(source)
 		compiledLine = generateBytecodeLine(oc,op1,op2,byteCode.length);
 		//byteCode += compiledLine;
 		// Add compiled line to bytecode.
+		sourceToCodeMap[line]=[byteCode.length, compiledLine.length];
 		for (var j=0;j<compiledLine.length;j++) {
 			byteCode[byteCode.length]=compiledLine[j]|0;
 		}
 		//console.log("Bytecode:" + generateBytecodeLine(oc,op1,op2));
+
+
 
 	}
 
@@ -137,10 +169,37 @@ function compile(source)
 
 	console.log("Finished compiling  " + lines.length + " lines to " + byteCode.length + " bytes.");
 
+	for (line = 0;line<sourceToCodeMap.length;line++)
+	{
+		var byteLine = "";
+		if (sourceToCodeMap[line][0]==null) continue;
+		for (var i=0;i<sourceToCodeMap[line][1];i++) {
+			//console.log("sTcM: "+byteCode[sourceToCodeMap[line][0]+i]);
+			byteLine += " "+padString(byteCode[sourceToCodeMap[line][0]+i],4);
+		}
+
+		var outp = "s[" + line + "]";
+		outp = padString(outp,6);
+		outp = outp + "b[" + sourceToCodeMap[line][0] + "]";
+		outp = padString(outp,6);
+		outp+=byteLine;
+		outp = padString(outp,30);
+		outp+=lines[line];
+		console.log(outp);
+	}
+
+
+
+
 	return byteCode;
 	//console.log(tokens);
 }
 
+function padString(str,size)
+{
+	while(str.length<size) str=str+" ";
+	return str;
+}
 
 // Called while compiling, if the label list has a label for the
 // current source line, update the list to represent where in
@@ -329,7 +388,7 @@ function parseCheckMov(line, lineNumber)
 
 
 // r1 [r1] 12 0xff label
-function parseOperand(operand)
+function parseOperand(operand, isWord)
 {
 	// Result contains the operand type id, the original string,
 	// and the integer representation if applicable.
@@ -339,26 +398,31 @@ function parseOperand(operand)
 	//console.log("parseOperand input:" + op + ":");
 
 	// Detect the registers.
-	switch (operand)
-	{
-		case "r1": result[0]=op.R1; break;
-		case "r2": result[0]=op.R2; break;
-		case "r3": result[0]=op.R3; break;
-		case '[r1]': result[0]=op.AR1W; break;
-		case "[r2]": result[0]=op.AR2W; break;
-		case "[r3]": result[0]=op.AR3W; break;
-		//
-		case '[r1b]': result[0]=op.AR1B; break;
-		case "[r2b]": result[0]=op.AR2B; break;
-		case "[r3b]": result[0]=op.AR3B; break;
-		case '[r1w]': result[0]=op.AR1W; break;
-		case "[r2w]": result[0]=op.AR2W; break;
-		case "[r3w]": result[0]=op.AR3W; break;
+	if (isWord!==true) {
+		switch (operand) {
+			case "r1": result[0]=op.R1; break;
+			case "r2": result[0]=op.R2; break;
+			case "r3": result[0]=op.R3; break;
+			case '[r1]': result[0]=op.AR1B; break;
+			case "[r2]": result[0]=op.AR2B; break;
+			case "[r3]": result[0]=op.AR3B; break;
+		}
 	}
+	if (result[0]!==0) return result;
+
+	if (isWord===true) {
+		switch (operand) {
+			case "r1": result[0]=op.R1; break;
+			case "r2": result[0]=op.R2; break;
+			case "r3": result[0]=op.R3; break;
+			case '[r1]': result[0]=op.AR1W; break;
+			case "[r2]": result[0]=op.AR2W; break;
+			case "[r3]": result[0]=op.AR3W; break;
+		}
+	}
+	if (result[0]!==0) return result;
 
 	//console.log("parseOperand result:" + result[0]);
-
-	if (result[0]!==0) return result;
 
 	var strMid = "";
 
@@ -366,40 +430,15 @@ function parseOperand(operand)
 	// Makes heavy use of parseInt.
 	if (isNaN(parseInt(operand))===false)
 	{
-		if (parseInt(operand)<=0xff) {
-			result[0] = op.BY;	// Word
+		if (isWord===true) {
+			result[0] = op.WO;	// Byte
 		} else {
-			result[0] = op.WO;	// Word
+			result[0] = op.BY;	// Word
 		}
-		result[2] = parseInt(operand);
+		result[2] = parseInt(operand)|0;
 		return result;
 	}
 
-	// explicit byte e.g. b10
-	if (operand.substring(0,1)=='b')
-	{
-		strMid = operand.substring(1,operand.length);
-		if (isNaN(parseInt(strMid))===false)
-		{
-			result[0] = op.BY; // word address
-			result[2] = parseInt(strMid)&0xff;
-			return result;
-		}
-	}
-
-
-
-	// explicit word e.g. w3210
-	if (operand.substring(0,1)=='w')
-	{
-		strMid = operand.substring(1,operand.length);
-		if (isNaN(parseInt(strMid))===false)
-		{
-			result[0] = op.WO; // word address
-			result[2] = parseInt(strMid)|0;
-			return result;
-		}
-	}
 
 	// Check for literal pointers, first check if string begins and ends with [].
 	if (operand.substring(0,1)=='[' && operand.substring(operand.length-1,operand.length)==']')
@@ -407,19 +446,26 @@ function parseOperand(operand)
 		strMid = operand.substring(1,operand.length-1); // Extract the string between [ and ].
 		if (isNaN(parseInt(strMid))===false)
 		{
-			result[0] = op.AW; // word address
+			if (isWord===true) result[0] = op.AW; // word address
+			else result[0] = op.AB; // word address
 			result[2] = parseInt(strMid);
 			return result;
 		}
 	}
 
-	// check for label
+	// Hmm, labels should always be 4 byte pointers, but what they reference might
+	// be 1 byte...
+
+	// check for label - should always be word?
 	for (var i=0;i<labelList.length;i++)
 	{
 		if (labelList[i][0]==operand) {
 			//console.log("LABEL USE FOUND!! " + operand);
 
-			result[0] = op.WO; // word address
+			//if (isWord===true) result[0] = op.WO;
+			//else result[0] = op.BY;
+			result[0] = op.WO;
+
 			result[2] = 0xffffffff;
 			result[3] = i; //record the label id for the detected label.
 			//var newRow = new Array(i, );
@@ -436,7 +482,8 @@ function parseOperand(operand)
 			if (labelList[j][0]==strMid) {
 				// console.log("LABEL (pointer) USE FOUND!! " + operand);
 
-				result[0] = op.AW; // word address
+				if (isWord===true) result[0] = op.AW; // word address
+				else result[0] = op.AB;
 				result[2] = 0xffffffff;
 				result[3] = j; //record the label id for the detected label.
 				//var newRow = new Array(i, );

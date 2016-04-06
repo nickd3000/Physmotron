@@ -4,13 +4,40 @@ function getSampleAssemblerCode(id) {
 	var NL=" \n", str = "";
 
 
+		// Simple scanline colour change.
+		if (id==9)
+		{
+			str = 	'movb byte [503], byte 13 ' + NL +
+					'start: ' + NL +
+					'movb byte [503], byte 1' + NL +
+					'movb byte [503], byte 0' + NL +
+					'jmp word start' + NL +
+					'brk' + NL ;
+			return str;
+		}
+
+		// Simple scanline colour change.
+		if (id==8)
+		{
+			str = 	'start: ' + NL +
+					'cmp byte [504], byte 10' + NL +
+					'jeq word match' + NL +
+					'' + NL +
+					'' + NL +
+					'movb byte [503], byte r1' + NL +
+					'jmp word start' + NL +
+					'match: inc r1' + NL +
+					'' + NL +
+					'jmp word start';
+			return str;
+		}
 
 		// Wait for scanline.
 		if (id==7)
 		{
 			str = 'start: inc r1' + NL +
 						'and r1, 0xff' + NL +
-						'movb [503], r1' + NL +
+						//'movb [503], r1' + NL +
 						'inc r2' + NL +
 						'pushb r2' + NL +
 						'pushb 5' + NL +
@@ -31,10 +58,14 @@ function getSampleAssemblerCode(id) {
 		// Simple scanline colour change.
 		if (id==6)
 		{
-			str = 	'start: inc r1' + NL +
+			str = 	'start: movb byte [503], byte 3' + NL +
+					'movb byte [503], byte [504]' + NL +
+					'jmp word start';
+					//'brk';
+					/*'start: inc word r1' + NL +
 					'and r1, 0x0f' + NL +
-					'movb [503], r1' + NL +
-					'jmp start';
+					'movb byte [503], byte 12' + NL +
+					'jmp word start';*/
 			return str;
 		}
 
@@ -95,9 +126,9 @@ function getSampleAssemblerCode(id) {
 	// test function calling and return.
 	if (id==3)
 	{
-		str = 	'call printn' + NL +
-				'call printd' + NL +
-				'call printn' + NL +
+		str = 	'call word printn' + NL +
+				'call word printd' + NL +
+				'call word printn' + NL +
 				'brk' + NL +
 				'printn: pushb 110' + NL +
 				'syscall 3' + NL +
