@@ -2,6 +2,8 @@ TVM Notes
 
 [ ] Allow comments
 [ ] Consume tab in web form
+[*] Make we form use fixed width font
+[ ] draw compile output to web page
 
 
 How to distinguish bytes and words inopcodes

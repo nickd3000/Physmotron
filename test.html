@@ -1,5 +1,11 @@
 
 <head>
+<style type="text/css">
+	textarea {
+	   font-family: monospace;
+	   font-size: 12px;
+	}
+</style>
 <title>My Web Page</title>
 <script src="instructions.js"></script>
 <script src="syscall.js"></script>
@@ -15,12 +21,26 @@
 
 	<canvas id="canvas" width="256" height="256"></canvas>
 
-	<textarea id="source" spellcheck="false" rows="20" cols="80">
-movb r1,2
-start: movb [503],r1
-inc r1
-jmp start
+	<textarea id="source" spellcheck="false" autofocus="true" rows="20" cols="25">
+start:
+
+movb   [503],r1   // Change BG col
+call   update1    // Call test fnc
+
+pushb  5          // x
+pushb  5          // y
+pushw  word hello // string
+sys    5          // print
+
+jmp    start      // repeat
+
+update1:        // Test fnc
+  movb  r2, 3
+  add   r1,r2
+  ret           // Return
+
 brk
+hello: db "Hello! ",147,0
 	</textarea>
 
 	<button onclick="webCompile()">Compile</button>

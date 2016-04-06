@@ -25,7 +25,7 @@ function sysCall(id)
 				var c = mem[p++]|0;
 				if (c===0) return;
 				mem[hw_screenTextLocation+pos++]=c;
-				mem[hw_screenTextLocation]=65;
+				//mem[hw_screenTextLocation]=65;
 			}
 		break;
 	}

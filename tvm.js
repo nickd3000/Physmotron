@@ -100,7 +100,8 @@ function draw() {
 	fpsCount++;
 	if (fpsCount>30) {
 		fpsCount=0;
-		document.getElementById("fps").textContent = (fps|0+" fps");
+		var fpsStr = "hello" + (fps|0); //fps|0+' fps';
+		document.getElementById("fps").textContent = ((fps|0)+" fps");
 	}
 
 	requestAnimationFrame(draw);

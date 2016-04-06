@@ -79,10 +79,14 @@ function compile(source)
 	{
 		sourceToCodeMap[line]=[null,null];
 
+
 		registerCurrentLineWithLabels(line, byteCode.length);
 
 		if (lines[line]==="") continue;
-		var tokens = lines[line].trim().split(/[ ,/\t]+/); // (/[ ,/t]+/)
+
+		var strLine = stripCommentFromLine(lines[line]);
+
+		var tokens = strLine.trim().split(/[ ,/\t]+/); // (/[ ,/t]+/)
 		var tokenCount = tokens.length;
 		//console.log("Line:"+line+" Tokens:"+tokenCount);
 
@@ -199,6 +203,15 @@ function padString(str,size)
 {
 	while(str.length<size) str=str+" ";
 	return str;
+}
+
+// Only supports // at the moment.
+function stripCommentFromLine(str)
+{
+
+	var pos = str.indexOf("//");
+	if (pos===-1) return str;
+	return str.substring(0,pos);
 }
 
 // Called while compiling, if the label list has a label for the
