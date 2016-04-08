@@ -8,7 +8,10 @@ function webCompile()
 
 	//loadBytecode(compile(getSampleAssemblerCode(7)),0);
 
-	var code = compile(source);
+	var output = "output";
+	var code = compile(source,output);
+
+	document.getElementById("output").value = compileOutput;
 
 	loadBytecode(code,0);
 

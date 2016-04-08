@@ -36,6 +36,7 @@ var labelList = [];
 var labelUsedList = [];
 
 //compile()
+var compileOutput = ".";
 
 function compile(source)
 {
@@ -47,6 +48,7 @@ function compile(source)
 	// reset these:
 	labelList = [];
 	labelUsedList = [];
+	compileOutput = "";
 
 /*
 	var source = "";
@@ -94,8 +96,8 @@ function compile(source)
 		//for (var j=0;j<tokenCount;j++) console.log("Token:" + tokens[j]);
 
 
-		// We may have consumed a label statement which resulted in a blank line.
-		if (tokens[0]==="") continue;
+		// We may have consumed a label or comment statement which resulted in a blank line.
+		if (tokens[0]==="") continue; // So skip empty lines.
 
 		// Hande data declarations.
 		if (tokens[0]=="db") {
@@ -148,6 +150,8 @@ function compile(source)
 		if (oc===-1) {
 			console.log("COMPILE ERROR: Opcode not recognised at line " + line);
 			console.log("  > " + lines[line]);
+			compileOutput = compileOutput + "COMPILE ERROR: at line " + line + "\n";
+			compileOutput = compileOutput + "  > " + lines[line];
 		}
 
 		compiledLine = generateBytecodeLine(oc,op1,op2,byteCode.length);
@@ -185,11 +189,12 @@ function compile(source)
 		var outp = "s[" + line + "]";
 		outp = padString(outp,6);
 		outp = outp + "b[" + sourceToCodeMap[line][0] + "]";
-		outp = padString(outp,6);
+		outp = padString(outp,12);
 		outp+=byteLine;
 		outp = padString(outp,30);
 		outp+=lines[line];
 		console.log(outp);
+		compileOutput = compileOutput + outp + "\n";
 	}
 
 

@@ -65,3 +65,9 @@ SYS
 CAL
 RET
 BRK
+
+Declaring data:
+	Note: at the moment all data needs to be declared at the end of the file.
+	var1: db 0xff
+	list: db 1,2,3,0x4
+	text: db "Hello",0
