@@ -208,10 +208,13 @@ function padString(str,size)
 // Only supports // at the moment.
 function stripCommentFromLine(str)
 {
-
 	var pos = str.indexOf("//");
-	if (pos===-1) return str;
-	return str.substring(0,pos);
+	if (pos!==-1) str = str.substring(0,pos);
+
+	pos = str.indexOf(";");
+	if (pos!==-1) str = str.substring(0,pos);
+
+	return str;
 }
 
 // Called while compiling, if the label list has a label for the

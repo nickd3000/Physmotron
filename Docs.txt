@@ -1,0 +1,67 @@
+
+Documentation - Work in progress...
+Physmotron TVM - Tiny virtual machine.
+
+
+Example program:
+================
+// Comments can start with // or ;
+//
+mov r1,5      // Move number 5 into register 1
+mov r2,var1   // Move address of var1 into r2
+mov r3,[var2] // Move byte at address var2 into r3
+
+pua           // Push r1,r2 and r3 on to stack
+call label    // Jump to label (stack contains return location)
+poa           // Pop r1,r2,r3 back from stack
+brk           // Stop execution
+
+label:            // A label we can jump to
+  mov [2048], 48  // Put a '0' character to screen text memory
+  mov [503], 14   // Change background colour to light blue
+  ret             // return from jump - only use it after a cal
+
+
+// Please put data declarations at end of source for now.
+var1: db 0x12  ; Declare a byte containing hex value 0x12
+var2: db 42    ; Declare a byte containing 12
+
+// END of example program.
+
+
+
+Instructions
+============
+
+MOV - Move
+	Examples
+	MOV r1,r2		// move r2 into r1
+	MOV r1,123		// move number 123 into r1
+	MOV r2,0xff		// move number 123 into r2
+	MOV r2,var1		// move address of var1 into r2
+
+CMP
+
+INC
+
+JMP
+JE
+JNE
+JL
+JLE
+JG
+JGE
+
+PUSHB, PUSHW
+
+PUA, POA
+
+ADD
+
+AND
+
+SYS
+
+CAL
+RET
+BRK

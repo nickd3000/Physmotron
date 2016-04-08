@@ -1,9 +1,47 @@
 TVM Notes
 
-[ ] Allow comments
-[ ] Consume tab in web form
+References
+http://www.cs.virginia.edu/~evans/cs216/guides/x86.html
+http://ref.x86asm.net/coder.html
+https://en.wikibooks.org/wiki/X86_Assembly
+
+[*] Allow comments using the ; character
+[ ] Consume tab in web form -- how though?
 [*] Make we form use fixed width font
 [ ] draw compile output to web page
+
+[ ] add new opcodes:
+	// Jumps
+	[*] JE	equal
+	[*] JNE	not equal
+	[*] JG	greater
+	[*] JGE	greater or equal
+	[*] JL	less
+	[*] JLE	less/equal
+	// stack
+	[ ] push all regs
+	[ ] pop all regs
+	// maths
+	[ ] SUB
+	[ ] mul
+	[ ] div
+	[ ] shl
+	[ ] shr
+	// logic
+	[ ] xor
+	[ ] or
+
+	// misc
+	[ ] xchg
+
+	[ ] sa
+	[ ] cwd
+	[ ] sar
+
+
+	[ ] in
+	[ ] test
+
 
 
 How to distinguish bytes and words inopcodes

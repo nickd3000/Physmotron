@@ -3,6 +3,44 @@ function getSampleAssemblerCode(id) {
 
 	var NL=" \n", str = "";
 
+		// Test push all and pop all
+		if (id==11)
+		{
+			str = 	'mov r1,1 ' + NL +
+					'mov r2,2 ' + NL +
+					'mov r3,3 ' + NL +
+					'pua ' + NL +
+					'mov r1,0 ' + NL +
+					'mov r2,0 ' + NL +
+					'mov r3,0 ' + NL +
+					'poa ' + NL +
+					'brk' + NL ;
+			return str;
+		}
+
+		// Test compare and jumps
+		if (id==10)
+		{
+			str = 	'mov r1,[var1] ; test' + NL +
+					'mov r2,[var2] // test2' + NL +
+					'mov r3,r2 ' + NL +
+					'; comment' + NL +
+					//'pushb byte r1 ' + NL +
+					'cmp r1,r2 ' + NL +
+					//'je red ' + NL +
+					'jl green' + NL +
+					'jge blue' + NL +
+					'brk' + NL +
+					'red: pushb 1' + NL +
+					'brk' + NL +
+					'green: pushb 2' + NL +
+					'brk' + NL +
+					'blue: pushb 3' + NL +
+					'brk' + NL +
+					'var1: db 3' + NL +
+					'var2: db 2' + NL ;
+			return str;
+		}
 
 		// Simple scanline colour change.
 		if (id==9)
@@ -58,9 +96,11 @@ function getSampleAssemblerCode(id) {
 		// Simple scanline colour change.
 		if (id==6)
 		{
-			str = 	'start: movb byte [503], byte 3' + NL +
-					'movb byte [503], byte [504]' + NL +
-					'jmp word start';
+			str = 	'mov [var1],  65000' + NL +
+					'brk' + NL +
+					'textPosX: db 5' + NL +
+					'textPosY: db 5' + NL +
+					'varb: db 111' + NL ;
 					//'brk';
 					/*'start: inc word r1' + NL +
 					'and r1, 0x0f' + NL +

@@ -66,7 +66,7 @@ function main() {
 	mem[hw_screenTextLocation+3]=107;
 	for (var n=hw_screenTextLocation;n<hw_screenTextLocation+250;n++) mem[n]=32+(n%128);
 
-	loadBytecode(compile(getSampleAssemblerCode(8)),0);
+	loadBytecode(compile(getSampleAssemblerCode(11)),0);
 
 	var runWithDisplay = true;
 
@@ -76,7 +76,7 @@ function main() {
 			//displayRegisters();
 			tick();
 		}
-		//displayRegisters();
+		displayRegisters();
 		dumpMemory();
 	}
 
@@ -144,8 +144,8 @@ function tick()
 	//console.log("found:" + mapI + ", iID:" + iID + ", iType:" + iType + ", iOp1:" + iOp1 + ", iOp2:"+ iOp2 + "");
 
 	switch(iType) {
-		case itype.MOVB:
-		case itype.MOVW:
+
+		case itype.MOV:
 			var addr1=null, addr2=null;
 			if (iOp1===op.AB) addr1=getSource(op.WO); // Pointers are always words.
 			if (iOp1===op.AW) addr1=getSource(op.WO);
@@ -179,24 +179,30 @@ function tick()
 		case itype.INC: setTarget(iOp1, getSource(iOp1)+1, null);	break;
 		case itype.DEC: setTarget(iOp1, getSource(iOp1)-1, null);	break;
 		case itype.JMP:
-			if (instr===opcode.JMPW) {
-				hw_pc = getSource(op.WO);
-			}
-			if (instr===opcode.JMPEQ) {
-				if (getFlag(zero_flag)) hw_pc = getSource(op.WO);
-				else hw_pc+=4; // skip word.
-			}
+			hw_pc = getSource(op.WO);
 			break;
-		case itype.JEQ:
+		case itype.JE:
 			if (getFlag(zero_flag)) hw_pc = getSource(op.WO);
 			else hw_pc+=4; // skip word.
 			break;
-		case itype.JLT:
+		case itype.JNE:
+			if (getFlag(zero_flag)===0) hw_pc = getSource(op.WO);
+			else hw_pc+=4; // skip word.
+			break;
+		case itype.JL:
 			if (getFlag(sign_flag)>0) hw_pc = getSource(op.WO);
 			else hw_pc+=4; // skip word.
 			break;
-		case itype.JGT:
+		case itype.JLE:
+			if (getFlag(sign_flag)>0 || getFlag(zero_flag)) hw_pc = getSource(op.WO);
+			else hw_pc+=4; // skip word.
+			break;
+		case itype.JG:
 			if (getFlag(sign_flag)===0) hw_pc = getSource(op.WO);
+			else hw_pc+=4; // skip word.
+			break;
+		case itype.JGE:
+			if (getFlag(sign_flag)===0 || getFlag(zero_flag)) hw_pc = getSource(op.WO);
 			else hw_pc+=4; // skip word.
 			break;
 		case itype.PUB: pushByte(getSource(iOp1)); break;
@@ -209,8 +215,26 @@ function tick()
 		case itype.RET: hw_pc=popWord(); break;
 		case itype.BRK: setFlag(break_flag,1); break;
 		case itype.AND: setTarget(iOp1,(getSource(iOp1)&getSource(iOp2))&0xffff); break;
+		case itype.PUA: pushAll(); break;
+		case itype.POA: popAll(); break;
 	}
 }
+
+
+function pushAll()
+{
+	pushWord(hw_r1);
+	pushWord(hw_r2);
+	pushWord(hw_r3);
+}
+
+function popAll()
+{
+	hw_r3 = popWord();
+	hw_r2 = popWord();
+	hw_r1 = popWord();
+}
+
 
 function processMiscInstruction(instr) {
 
@@ -285,7 +309,8 @@ function displayRegisters()
 {
 	var outHW = "PC:" + hw_pc + " \tSP:" + hw_sp;
 	var outRegs =  " \tR1:" + hw_r1 + " \tR2:" + hw_r2  + " \tR3:" + hw_r3;
-	var outStack = " \tST:"+mem[hw_sp+1]+","+mem[hw_sp+2]+","+mem[hw_sp+3]+","+mem[hw_sp+4];
+	var outStack = " \tST:";//+mem[hw_sp+1]+","+mem[hw_sp+2]+","+mem[hw_sp+3]+","+mem[hw_sp+4];
+	for (var s=0;s<16;s++) outStack = outStack + " ,"+mem[hw_sp+s];
 	console.log(outHW + outRegs + outStack);
 
 }

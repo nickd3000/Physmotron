@@ -3,7 +3,7 @@
 <style type="text/css">
 	textarea {
 	   font-family: monospace;
-	   font-size: 12px;
+	   font-size: 10px;
 	}
 </style>
 <title>My Web Page</title>
@@ -21,26 +21,32 @@
 
 	<canvas id="canvas" width="256" height="256"></canvas>
 
-	<textarea id="source" spellcheck="false" autofocus="true" rows="20" cols="25">
-start:
+	<textarea id="source" spellcheck="false" autofocus="true" rows="20" cols="65" wrap="off">
+// Comments can start with // or ;
+//
+mov r1,5      // Move number 5 into register 1
+mov r2,var1   // Move address of var1 into r2
+mov r3,[var2] // Move byte at address var2 into r3
 
-movb   [503],r1   // Change BG col
-call   update1    // Call test fnc
+pua           // Push r1,r2 and r3 on to stack
+call label    // Jump to label (stack contains return location)
+poa           // Pop r1,r2,r3 back from stack
 
-pushb  5          // x
-pushb  5          // y
-pushw  word hello // string
-sys    5          // print
+brk           // Stop execution
 
-jmp    start      // repeat
+label:        // A label we can jump to
+	mov [2048], 48  // Put a '0' character to screen text memory
+	mov [503], 14   // Change background colour to light blue
+	ret             // return from 'function'
 
-update1:        // Test fnc
-  movb  r2, 3
-  add   r1,r2
-  ret           // Return
+ret      // return from jump - only use it after a cal
 
-brk
-hello: db "Hello! ",147,0
+
+// Please put data declarations at end of source for now.
+var1: db 0x12  ; Declare a byte containing hex value 0x12
+var2: db 42    ; Declare a byte containing 12
+
+// END of example program.
 	</textarea>
 
 	<button onclick="webCompile()">Compile</button>
