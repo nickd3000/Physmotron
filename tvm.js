@@ -2,37 +2,46 @@
 // Hardware memory.
 
 // TODO: move machine variables to a machine structure.
-var memSize = 1024*128;
+var memSize = 1024*1024; // 1048576
 var mem = new Uint8Array(memSize);
 // Registers
 var hw_r1 = 0;
 var hw_r2 = 0;
 var hw_r3 = 0;
 var hw_pc = 0;
-var hw_stackTop = memSize-0xff;
+var hw_stackTop = 1280; // size = 0xff;
 var hw_sp = hw_stackTop;
 var hw_flags = 0;
-var hw_screenMode = 500;
-var hw_cursorX = 501;		// Text cursor x
-var hw_cursorY = 502;		// text cursor y
-var hw_mouseX = 505;		// Text cursor x
-var hw_mouseY = 506;		// text cursor y
 
-var hw_joyUp = 510;		// text cursor y
-var hw_joyDown = 511;		// text cursor y
-var hw_joyLeft = 512;		// text cursor y
-var hw_joyRight = 513;		// text cursor y
-var hw_joyB1 = 514;		// text cursor y
-var hw_joyB2 = 515;		// text cursor y
+// screen
+var hw_screenMode = 1024;
+var hw_colBG = 1025;
+var hw_scanLine = 1026;
+var hw_cursorX = 1027;		// Text cursor x
+var hw_cursorY = 1028;		// text cursor y
+// input
+var hw_mouseX = 1088;		// Text cursor x
+var hw_mouseY = 1089;		// text cursor y
+var hw_joyUp = 1090;		// text cursor y
+var hw_joyDown = 1091;		// text cursor y
+var hw_joyLeft = 1092;		// text cursor y
+var hw_joyRight = 1093;		// text cursor y
+var hw_joyB1 = 1094;		// text cursor y
+var hw_joyB2 = 1095;		// text cursor y
 
-var hw_colBG = 503;
-var hw_scanLine = 504;
-var hw_screenPixelLocation = 4096;
-var hw_screenPixelSize = 65536;
-var hw_screenTextLocation = 4096-2048; // 1024
+
+var hw_fontLocation = 0x600; // 1536   320b
+var hw_fontSize = 1024; // 128*8=
+
+var hw_screenTextLocation = 0xA00; // 1024
 var hw_screenTextSize = 1024;
-var hw_fontLocation = 4096-1024; //320b
-var hw_fontSize = 320;
+
+var hw_screenPixelLocation = 0x1000;
+var hw_screenPixelSize = 65536; // 0xffff
+var hw_screenPixelLocationEnd = 0x10fff;
+
+var hw_programDataStart = 0x11000; // 69632
+
 
 var fpsLastLoop = new Date();
 var fpsCount = 0;
@@ -41,6 +50,7 @@ var fpsCount = 0;
 var sign_flag = 1<<0;
 var zero_flag = 1<<1;
 var break_flag = 1<<2;
+var carry_flag = 1<<3;
 
 var stopAnimation = false;
 
@@ -59,7 +69,7 @@ function resetMachine() {
 	hw_r1 = 0;
 	hw_r2 = 0;
 	hw_r3 = 0;
-	hw_pc = 0;
+	hw_pc = hw_programDataStart;
 	hw_stackTop = memSize-0xff;
 	hw_sp = hw_stackTop;
 	hw_flags = 0;
@@ -76,7 +86,7 @@ function main() {
 	mem[hw_screenTextLocation+3]=107;
 	for (var n=hw_screenTextLocation;n<hw_screenTextLocation+250;n++) mem[n]=32+(n%128);
 
-	loadBytecode(compile(getSampleAssemblerCode(11)),0);
+	loadBytecode(compile(getSampleAssemblerCode(11)),hw_programDataStart);
 
 	var runWithDisplay = true;
 
@@ -150,7 +160,7 @@ function tick()
 	var iType = imap[mapI][1];
 	var iOp1 = imap[mapI][2];
 	var iOp2 = imap[mapI][3];
-
+	var val1=0|0;
 	//console.log("found:" + mapI + ", iID:" + iID + ", iType:" + iType + ", iOp1:" + iOp1 + ", iOp2:"+ iOp2 + "");
 
 	switch(iType) {
@@ -223,15 +233,30 @@ function tick()
 		case itype.PUW: pushWord(getSource(iOp1)); break;
 		case itype.POB: setTarget(iOp1,popByte()); break;
 		case itype.POW: setTarget(iOp1,popWord()); break;
-		case itype.ADD: setTarget(iOp1,(getSource(iOp1)+getSource(iOp2))&0xffff); break;
-		case itype.SUB: setTarget(iOp1,(getSource(iOp1)-getSource(iOp2))&0xffff); break;
+		case itype.ADD: setTarget(iOp1,(getSource(iOp1)+getSource(iOp2))&0xffffffff); break;
+		case itype.SUB: setTarget(iOp1,(getSource(iOp1)-getSource(iOp2))&0xffffffff); break;
 		case itype.SYS: sysCall(getSource(iOp1)); break;
 		case itype.CAL: pushWord(hw_pc+4); hw_pc = getSource(op.WO); break;
 		case itype.RET: hw_pc=popWord(); break;
 		case itype.BRK: setFlag(break_flag,1); break;
-		case itype.AND: setTarget(iOp1,(getSource(iOp1)&getSource(iOp2))&0xffff); break;
+		case itype.AND: setTarget(iOp1,(getSource(iOp1)&getSource(iOp2))&0xffffffff); break;
 		case itype.PUA: pushAll(); break;
 		case itype.POA: popAll(); break;
+		case itype.SHL:
+			val1  = getSource(iOp1);
+			if (0x80000000&val1>0) setFlag(carry_flag,1);
+			setTarget(iOp1, (val1<<1)&0xffffffff);
+			break;
+		case itype.SHR:
+			val1  = getSource(iOp1);
+			if (0x00000001&val1>0) setFlag(carry_flag,1);
+			setTarget(iOp1, (val1>>1)&0xffffffff);
+			break;
+		case itype.CLC: setFlag(carry_flag,0); break;
+		case itype.CLZ: setFlag(zero_flag,0); break;
+		case itype.CLS: setFlag(sign_flag,0); break;
+		case itype.CLB: setFlag(break_flag,0); break;
+
 	}
 }
 

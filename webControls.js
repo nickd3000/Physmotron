@@ -13,7 +13,7 @@ function webCompile()
 
 	document.getElementById("output").value = compileOutput;
 
-	loadBytecode(code,0);
+	loadBytecode(code,hw_programDataStart);
 
 	document.getElementById("canvas").focus();
 	//requestAnimationFrame(draw);

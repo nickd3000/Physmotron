@@ -5,14 +5,24 @@ http://www.cs.virginia.edu/~evans/cs216/guides/x86.html
 http://ref.x86asm.net/coder.html
 https://en.wikibooks.org/wiki/X86_Assembly
 
+
+==
+[*] rearranged memory map
+[*] user data / code now starts at hw_programDataStart 0x11000
+[*] Added shift left and right [shl and shr]
+[*] added operations to clear various flags:
+	clc=clear carry, clz=clear zero, cls=clear sign, clb=clear break
+[*] add jump if carry clear - carry gets set if shift moves bit off the end.
+==
 [*] fix compare order
 [*] add multiply and divide sys calls MUL=30, DIV=31
 [*] add mouse coords at mem [505][506]
 [*] add basic joystick (cursor keys and ctrs, shift) mapped to:
 	up[510] down[511] left[512 right[513] fire1[514] fire2[515]
 [*] fixed compare byte at address with byte (eg: cmp [511], 1)
-
 ==
+
+[ ] left and right shift.
 [ ] add instructions to clear equal and less than flags
 [*] Allow comments using the ; character
 [ ] Consume tab in web form -- how though?

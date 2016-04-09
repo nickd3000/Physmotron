@@ -188,7 +188,7 @@ function compile(source)
 
 		var outp = "s[" + line + "]";
 		outp = padString(outp,6);
-		outp = outp + "b[" + sourceToCodeMap[line][0] + "]";
+		outp = outp + "b[" + (sourceToCodeMap[line][0]+hw_programDataStart) + "]";
 		outp = padString(outp,12);
 		outp+=byteLine;
 		outp = padString(outp,30);
@@ -250,7 +250,7 @@ function refactorLabelsUsedInBytecode(bc)
 	for (var i=0;i<labelUsedList.length;i++) {
 		var labelId = labelUsedList[i][0];
 		var codeLoc = labelUsedList[i][1];
-		var targetAddress = labelList[labelId][2];
+		var targetAddress = labelList[labelId][2] + hw_programDataStart;
 		bc[codeLoc++] = ((targetAddress>>24)&0xff)|0;
 		bc[codeLoc++] = ((targetAddress>>16)&0xff)|0;
 		bc[codeLoc++] = ((targetAddress>>8)&0xff)|0;

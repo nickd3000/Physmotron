@@ -78,6 +78,8 @@ var opcode = { NO_OP: 0,
 	JLE: 104,			// less or equal
 	JG: 105,
 	JGE: 106,
+	JC: 107,
+	JCC: 108,
 
 	PUSHB_R1: 120,
 	PUSHB_R2: 121,
@@ -137,10 +139,22 @@ var opcode = { NO_OP: 0,
 	AND_R2_BY: 195,
 	AND_R3_BY: 196,
 
-	SYSCALL: 200,		// Syscall, next byte specifies what syscall.
-	CAL: 201,
-	RET: 202,
-	BRK: 221,			// Set Break flag
+	SHL_R1: 197,
+	SHL_R2: 198,
+	SHL_R3: 199,
+	SHR_R1: 200,
+	SHR_R2: 201,
+	SHR_R3: 202,
+
+	CLC: 220,	// clear carry flag
+	CLZ: 221, 	// clear zero flag
+	CLS: 222, 	// clear sign flag
+	CLB: 223, 	// clear break flag
+
+	SYSCALL: 250,		// Syscall, next byte specifies what syscall.
+	CAL: 251,
+	RET: 252,
+	BRK: 254,			// Set Break flag
 };
 
 // Id's used for source and dest for instructions.
@@ -176,6 +190,8 @@ var itype = {
 	JLE: 10,		// Jump if equal.
 	JG: 11,		// Jump if equal.
 	JGE: 12,		// Jump if equal.
+	JC: 13,		// Jump if carry is set.
+	JCC: 14,		// Jump if carry is clear.
 	PUB: 20,		// Push byte
 	PUW: 21,		// Push word (4 bytes)
 	POB: 22,		// Pop byte
@@ -189,6 +205,12 @@ var itype = {
 	RET: 30,
 	BRK: 31,
 	AND: 32,
+	SHL: 33,
+	SHR: 34,
+	CLC: 35,	// clear carry flag
+	CLZ: 36, 	// clear zero flag
+	CLS: 37, 	// clear sign flag
+	CLB: 38, 	// clear break flag
 };
 
 // NOTE: the above instruction types should represent groups of instructions
@@ -201,12 +223,14 @@ var instNames = [
 	[itype.INC, 'inc'],
 	[itype.DEC, 'dec'],
 	[itype.JMP, 'jmp', 'jump'],
-	[itype.JE, 'je','be'],
+	[itype.JE, 'je','jeq','be'],
 	[itype.JNE, 'jne','bne'],
 	[itype.JL, 'jl','bl'],
 	[itype.JLE, 'jle','ble'],
 	[itype.JG, 'jg','bg'],
 	[itype.JGE, 'jge','bge'],
+	[itype.JC, 'jc','bc'],
+	[itype.JCC, 'jcc','bcc'],
 	[itype.PUB, 'pushb'],
 	[itype.PUW, 'pushw'],
 	[itype.POB, 'popb'],
@@ -220,7 +244,14 @@ var instNames = [
 	[itype.RET, 'ret', 'return'],
 	[itype.BRK, 'brk', 'break'],
 	[itype.AND, 'and'],
+	[itype.SHL, 'shl'],
+	[itype.SHR, 'shr'],
+	[itype.CLC, 'clc'],
+	[itype.CLZ, 'clz'],
+	[itype.CLS, 'cls'],
+	[itype.CLB, 'clb'],
 ];
+
 
 
 // Instruction map.
@@ -301,6 +332,8 @@ var imap = [
 	[opcode.JLE,			itype.JLE,	op.WO,	null],
 	[opcode.JG,				itype.JG,	op.WO,	null],
 	[opcode.JGE,			itype.JGE,	op.WO,	null],
+	[opcode.JC,				itype.JC,	op.WO,	null],
+	[opcode.JCC,			itype.JCC,	op.WO,	null],
 	//
 	[opcode.PUSHB_R1,		itype.PUB,	op.R1,	null],	// Push register Byte to stack
 	[opcode.PUSHB_R2,		itype.PUB,	op.R2,	null],
@@ -361,6 +394,17 @@ var imap = [
 	[opcode.AND_R2_BY,		itype.AND,	op.R2,	op.BY],
 	[opcode.AND_R3_BY,		itype.AND,	op.R3,	op.BY],
 
+	[opcode.SHL_R1,		itype.SHL,	op.R1,	null],		// Shift left
+	[opcode.SHL_R2,		itype.SHL,	op.R2,	null],
+	[opcode.SHL_R3,		itype.SHL,	op.R3,	null],
+	[opcode.SHR_R1,		itype.SHR,	op.R1,	null],		// Shift right
+	[opcode.SHR_R2,		itype.SHR,	op.R2,	null],
+	[opcode.SHR_R3,		itype.SHR,	op.R3,	null],
+
+	[opcode.CLC,			itype.CLC,	null,	null],	// clear carry
+	[opcode.CLZ,			itype.CLZ,	null,	null],	// clear zero
+	[opcode.CLS,			itype.CLS,	null,	null],	// clear sign
+	[opcode.CLB,			itype.CLB,	null,	null],	// clear break
 
 	//
 	[opcode.SYSCALL,		itype.SYS,	op.BY,	null],

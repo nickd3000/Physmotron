@@ -78,7 +78,7 @@ var initDisplay = function ()
 		}
 		if (pd===1) evt.preventDefault();
 	}, false);
-	
+
 	canvas.addEventListener('keyup', function(evt) {
 		var pd=0;
 		switch(evt.keyCode) {
@@ -102,7 +102,7 @@ var initDisplay = function ()
 function redrawScreen(amount)
 {
 	"use strict";
-	var mode = mem[500];
+	var mode = mem[hw_screenMode];
 
 	for (var i=0;i<amount;i++) {
 		scanLine=scanLine%0xff;
@@ -126,7 +126,7 @@ function renderScanlineGraphicsMode()
 	var pixel=0, x4=0;
 	for (var x=0;x<256;x++) {
 		x4 = x*4;
-		pixel = mem[1024+x+(256*scanLine)];
+		pixel = mem[hw_screenPixelLocation+x+(256*scanLine)];
 		rowData.data[x4] = (pixel&3)*85;
 		rowData.data[x4+1] = ((pixel>>2)&7)*36;
 		rowData.data[x4+2] = ((pixel>>5)&7)*36;
