@@ -46,7 +46,7 @@ var opcode = { NO_OP: 0,
 	MOV_R3_AR2: 45,
 
 	MOV_AB_BY: 46,		// Move next byte to byte address
-	MOV_AB_AB: 47,		// Move next byte to byte address
+	MOV_AB_AB: 47,		// Move next byte address to byte address
 
 	CMP_R1_R2: 60,		// compare registers
 	CMP_R1_R3: 61,
@@ -95,6 +95,21 @@ var opcode = { NO_OP: 0,
 	POPW_R3: 145,
 	PUSHALL: 146,	// Push R1,R2,R3
 	POPALL:	147,		// Push R1,R2,R3
+
+	SUB_R1_R2: 150,		// SUB : R1: R1 + R2
+	SUB_R1_R3: 151,
+	SUB_R2_R1: 152,
+	SUB_R2_R3: 153,
+	SUB_R3_R1: 154,
+	SUB_R3_R2: 155,
+	SUB_R1_WO: 156,		// SUB Reg with word
+	SUB_R2_WO: 157,
+	SUB_R3_WO: 158,
+	SUB_R1_BY: 159,		// SUB Reg with byte
+	SUB_R2_BY: 160,
+	SUB_R3_BY: 161,
+
+
 	ADD_R1_R2: 170,		// ADD : R1: R1 + R2
 	ADD_R1_R3: 171,
 	ADD_R2_R1: 172,
@@ -168,11 +183,12 @@ var itype = {
 	PUA: 24,		// Push all regs
 	POA: 25,		// Pop all regs
 	ADD: 26,
-	SYS: 27,
-	CAL: 28,
-	RET: 29,
-	BRK: 30,
-	AND: 31,
+	SUB: 27,
+	SYS: 28,
+	CAL: 29,
+	RET: 30,
+	BRK: 31,
+	AND: 32,
 };
 
 // NOTE: the above instruction types should represent groups of instructions
@@ -185,12 +201,12 @@ var instNames = [
 	[itype.INC, 'inc'],
 	[itype.DEC, 'dec'],
 	[itype.JMP, 'jmp', 'jump'],
-	[itype.JE, 'je'],
-	[itype.JNE, 'jne'],
-	[itype.JL, 'jl'],
-	[itype.JLE, 'jle'],
-	[itype.JG, 'jg'],
-	[itype.JGE, 'jge'],
+	[itype.JE, 'je','be'],
+	[itype.JNE, 'jne','bne'],
+	[itype.JL, 'jl','bl'],
+	[itype.JLE, 'jle','ble'],
+	[itype.JG, 'jg','bg'],
+	[itype.JGE, 'jge','bge'],
 	[itype.PUB, 'pushb'],
 	[itype.PUW, 'pushw'],
 	[itype.POB, 'popb'],
@@ -198,6 +214,7 @@ var instNames = [
 	[itype.PUA, 'pua','pusha','pushall'],
 	[itype.POA, 'poa','popa','popall'],
 	[itype.ADD, 'add'],
+	[itype.SUB, 'sub'],
 	[itype.SYS, 'sys', 'syscall'],
 	[itype.CAL, 'cal', 'call'],
 	[itype.RET, 'ret', 'return'],
@@ -303,18 +320,32 @@ var imap = [
 	[opcode.PUSHALL,			itype.PUA,	null,	null],
 	[opcode.POPALL,			itype.POA,	null,	null],
 
+	[opcode.SUB_R1_R2,		itype.SUB,	op.R1,	op.R2],	// ADD : R1 = R1 + R2
+	[opcode.SUB_R1_R3,		itype.SUB,	op.R1,	op.R3],
+	[opcode.SUB_R2_R1,		itype.SUB,	op.R2,	op.R1],
+	[opcode.SUB_R2_R3,		itype.SUB,	op.R2,	op.R3],
+	[opcode.SUB_R3_R1,		itype.SUB,	op.R3,	op.R1],
+	[opcode.SUB_R3_R2,		itype.SUB,	op.R3,	op.R2],
+	[opcode.SUB_R1_WO,		itype.SUB,	op.R1,	op.WO],
+	[opcode.SUB_R2_WO,		itype.SUB,	op.R2,	op.WO],
+	[opcode.SUB_R3_WO,		itype.SUB,	op.R3,	op.WO],
+	[opcode.SUB_R1_BY,		itype.SUB,	op.R1,	op.BY],
+	[opcode.SUB_R2_BY,		itype.SUB,	op.R2,	op.BY],
+	[opcode.SUB_R3_BY,		itype.SUB,	op.R3,	op.BY],
+
+
 	[opcode.ADD_R1_R2,		itype.ADD,	op.R1,	op.R2],	// ADD : R1 = R1 + R2
 	[opcode.ADD_R1_R3,		itype.ADD,	op.R1,	op.R3],
 	[opcode.ADD_R2_R1,		itype.ADD,	op.R2,	op.R1],
 	[opcode.ADD_R2_R3,		itype.ADD,	op.R2,	op.R3],
 	[opcode.ADD_R3_R1,		itype.ADD,	op.R3,	op.R1],
 	[opcode.ADD_R3_R2,		itype.ADD,	op.R3,	op.R2],
-	[opcode.ADD_R1_WO,		itype.AND,	op.R1,	op.WO],
-	[opcode.ADD_R2_WO,		itype.AND,	op.R2,	op.WO],
-	[opcode.ADD_R3_WO,		itype.AND,	op.R3,	op.WO],
-	[opcode.ADD_R1_BY,		itype.AND,	op.R1,	op.BY],
-	[opcode.ADD_R2_BY,		itype.AND,	op.R2,	op.BY],
-	[opcode.ADD_R3_BY,		itype.AND,	op.R3,	op.BY],
+	[opcode.ADD_R1_WO,		itype.ADD,	op.R1,	op.WO],
+	[opcode.ADD_R2_WO,		itype.ADD,	op.R2,	op.WO],
+	[opcode.ADD_R3_WO,		itype.ADD,	op.R3,	op.WO],
+	[opcode.ADD_R1_BY,		itype.ADD,	op.R1,	op.BY],
+	[opcode.ADD_R2_BY,		itype.ADD,	op.R2,	op.BY],
+	[opcode.ADD_R3_BY,		itype.ADD,	op.R3,	op.BY],
 
 	// NEW
 	[opcode.AND_R1_R2,		itype.AND,	op.R1,	op.R2],	// AND : R1: R1 & R2

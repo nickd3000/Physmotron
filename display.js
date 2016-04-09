@@ -28,6 +28,7 @@ var scanLine=0;
 var rowData;
 var toggle=255;
 var onePixel = null;
+
 var initDisplay = function ()
 {
 	"use strict";
@@ -54,8 +55,64 @@ var initDisplay = function ()
 	//ctx.fillStyle="white";
 	//ctx.fillText("100 Bytes free",0,8);
 
+
+	// Hook into mouse move event.
+	canvas.addEventListener('mousemove', function(evt) {
+		var mx=0,my=0;
+		var rect = canvas.getBoundingClientRect();
+		mx = (evt.clientX - rect.left)|0;
+		my = (evt.clientY - rect.top)|0;
+		mem[hw_mouseX] = mx&0xff;
+		mem[hw_mouseY] = my&0xff;
+    }, false);
+
+	canvas.addEventListener('keydown', function(evt) {
+		var pd=0;
+		switch(evt.keyCode) {
+			case 37: mem[hw_joyLeft]=1|0; pd=1; break;
+			case 38: mem[hw_joyUp]=1|0;  pd=1; break;
+			case 39: mem[hw_joyRight]=1|0;  pd=1; break;
+			case 40: mem[hw_joyDown]=1|0;  pd=1; break;
+			case 17: mem[hw_joyB1]=1|0;  pd=1; break; // Left Ctrl
+			case 16: mem[hw_joyB2]=1|0;  pd=1; break; // Left shift
+		}
+		if (pd===1) evt.preventDefault();
+	}, false);
+	
+	canvas.addEventListener('keyup', function(evt) {
+		var pd=0;
+		switch(evt.keyCode) {
+			case 37: mem[hw_joyLeft]=0|0;  pd=1; break;
+			case 38: mem[hw_joyUp]=0|0;  pd=1; break;
+			case 39: mem[hw_joyRight]=0|0;  pd=1; break;
+			case 40: mem[hw_joyDown]=0|0;  pd=1; break;
+			case 17: mem[hw_joyB1]=0|0;  pd=1; break; // Left Ctrl
+			case 16: mem[hw_joyB2]=0|0;  pd=1; break; // Left shift
+		}
+		if (pd===1) evt.preventDefault();
+	}, false);
+
+
 	scanLine = 0;
 };
+
+
+
+// Redraw amount scanlines in the current display mode.
+function redrawScreen(amount)
+{
+	"use strict";
+	var mode = mem[500];
+
+	for (var i=0;i<amount;i++) {
+		scanLine=scanLine%0xff;
+		mem[hw_scanLine] = scanLine;
+		if (mode===0) renderScanlineTextMode();
+		else renderScanlineGraphicsMode();
+	}
+	scanLine=scanLine%0xff; // Wrap scanline.
+
+}
 
 // screen memory
 // screen modes: text / pallete / hicolor[3/3/2]
@@ -82,35 +139,7 @@ function renderScanlineGraphicsMode()
 
 
 
-function redrawScreen(amount)
-{
-	"use strict";
-	var mode = mem[500];
 
-	for (var i=0;i<amount;i++) {
-		scanLine=scanLine%0xff;
-		mem[hw_scanLine] = scanLine;
-		if (mode===0) renderScanlineTextMode();
-		else renderScanlineGraphicsMode();
-	}
-	scanLine=scanLine%0xff;
-	 /*
-	if (mem[500]===0) {
-		scanLine = 0;
-		while (scanLine<255)
-		{
-			renderScanlineTextMode();
-		}
-		return;
-	}
-
-	scanLine = 0;
-	while (scanLine<255)
-	{
-		renderScanlineGraphicsMode();
-	}
-*/
-}
 
 
 function redrawTextMode(){

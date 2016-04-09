@@ -13,8 +13,18 @@ var hw_stackTop = memSize-0xff;
 var hw_sp = hw_stackTop;
 var hw_flags = 0;
 var hw_screenMode = 500;
-var hw_cursorX = 501;
-var hw_cursorY = 502;
+var hw_cursorX = 501;		// Text cursor x
+var hw_cursorY = 502;		// text cursor y
+var hw_mouseX = 505;		// Text cursor x
+var hw_mouseY = 506;		// text cursor y
+
+var hw_joyUp = 510;		// text cursor y
+var hw_joyDown = 511;		// text cursor y
+var hw_joyLeft = 512;		// text cursor y
+var hw_joyRight = 513;		// text cursor y
+var hw_joyB1 = 514;		// text cursor y
+var hw_joyB2 = 515;		// text cursor y
+
 var hw_colBG = 503;
 var hw_scanLine = 504;
 var hw_screenPixelLocation = 4096;
@@ -169,7 +179,11 @@ function tick()
 
 		break;
 		case itype.CMP:
-			var result = getSource(iOp2) - getSource(iOp1);
+			if (iOp1===op.AB) addr1=getSource(op.WO); // Pointers are always words.
+			if (iOp1===op.AW) addr1=getSource(op.WO);
+			if (iOp2===op.AB) addr2=getSource(op.WO);
+			if (iOp2===op.AW) addr2=getSource(op.WO);
+			var result = getSource(iOp1,addr1) - getSource(iOp2,addr2);
 			setFlag(zero_flag,0);
 			setFlag(sign_flag,0);
 			if (result===0) setFlag(zero_flag,1);
@@ -210,6 +224,7 @@ function tick()
 		case itype.POB: setTarget(iOp1,popByte()); break;
 		case itype.POW: setTarget(iOp1,popWord()); break;
 		case itype.ADD: setTarget(iOp1,(getSource(iOp1)+getSource(iOp2))&0xffff); break;
+		case itype.SUB: setTarget(iOp1,(getSource(iOp1)-getSource(iOp2))&0xffff); break;
 		case itype.SYS: sysCall(getSource(iOp1)); break;
 		case itype.CAL: pushWord(hw_pc+4); hw_pc = getSource(op.WO); break;
 		case itype.RET: hw_pc=popWord(); break;

@@ -151,7 +151,7 @@ function compile(source)
 			console.log("COMPILE ERROR: Opcode not recognised at line " + line);
 			console.log("  > " + lines[line]);
 			compileOutput = compileOutput + "COMPILE ERROR: at line " + line + "\n";
-			compileOutput = compileOutput + "  > " + lines[line];
+			compileOutput = compileOutput + "  > " + lines[line] + "\n";
 		}
 
 		compiledLine = generateBytecodeLine(oc,op1,op2,byteCode.length);

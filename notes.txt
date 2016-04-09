@@ -5,10 +5,21 @@ http://www.cs.virginia.edu/~evans/cs216/guides/x86.html
 http://ref.x86asm.net/coder.html
 https://en.wikibooks.org/wiki/X86_Assembly
 
+[*] fix compare order
+[*] add multiply and divide sys calls MUL=30, DIV=31
+[*] add mouse coords at mem [505][506]
+[*] add basic joystick (cursor keys and ctrs, shift) mapped to:
+	up[510] down[511] left[512 right[513] fire1[514] fire2[515]
+[*] fixed compare byte at address with byte (eg: cmp [511], 1)
+
+==
+[ ] add instructions to clear equal and less than flags
 [*] Allow comments using the ; character
 [ ] Consume tab in web form -- how though?
 [*] Make we form use fixed width font
 [ ] draw compile output to web page
+[ ] add basic input - cursor keys and mouse
+
 
 [ ] add new opcodes:
 	// Jumps
@@ -50,3 +61,19 @@ mov byte [label], byte 123
 push byte [addr]
 pop word [addr]
 cmp byte[addr], byte 0xff
+
+
+
+Examples of new stuff:
+
+
+// Divide syscall (sys 31)
+// Mouse coords memory locasion [505],[506]
+start:
+mov r3,[505]  // Get mouse x pos
+pushw r3
+pushw word 32
+sys 31        // divide mouse x by 32
+popw r3       // retrieve result
+mov [503],r3  // put result into BG colour
+jmp start

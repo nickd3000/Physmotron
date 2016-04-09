@@ -15,5 +15,6 @@ function webCompile()
 
 	loadBytecode(code,0);
 
+	document.getElementById("canvas").focus();
 	//requestAnimationFrame(draw);
 }
