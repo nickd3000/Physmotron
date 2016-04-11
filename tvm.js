@@ -347,12 +347,12 @@ function popWord()
 
 function displayRegisters()
 {
-	var outHW = "PC:" + hw_pc + " \tSP:" + hw_sp;
-	var outRegs =  " \tR1:" + hw_r1 + " \tR2:" + hw_r2  + " \tR3:" + hw_r3;
-	var outStack = " \tST:";//+mem[hw_sp+1]+","+mem[hw_sp+2]+","+mem[hw_sp+3]+","+mem[hw_sp+4];
+	var outHW = "PC:" + hw_pc + " \tSP:" + hw_sp + "\n";
+	var outRegs =  "R1:" + hw_r1 + " \tR2:" + hw_r2  + " \tR3:" + hw_r3 + "\n";
+	var outStack = "ST:";//+mem[hw_sp+1]+","+mem[hw_sp+2]+","+mem[hw_sp+3]+","+mem[hw_sp+4];
 	for (var s=0;s<16;s++) outStack = outStack + " ,"+mem[hw_sp+s];
 	console.log(outHW + outRegs + outStack);
-
+	return (outHW + outRegs + outStack);
 }
 
 function dumpMemory()
@@ -423,13 +423,13 @@ function getSource(src,addr)
 		case op.BY: return mem[hw_pc++];
 		case op.WO: return (mem[hw_pc++]<<24)+(mem[hw_pc++]<<16)+(mem[hw_pc++]<<8)+mem[hw_pc++];
 		case op.AB: return mem[addr];
-		case op.AW: return (mem[addr+3]<<24)+(mem[addr+2]<<16)+(mem[addr+1]<<8)+mem[addr];
+		case op.AW: return (mem[addr]<<24)+(mem[addr+1]<<16)+(mem[addr+2]<<8)+mem[addr+3];
 		case op.AR1B: return mem[hw_r1];
 		case op.AR2B: return mem[hw_r2];
 		case op.AR3B: return mem[hw_r3];
-		case op.AR1W: return (mem[hw_r1+3]<<24)+(mem[hw_r1+2]<<16)+(mem[hw_r1+1]<<8)+mem[hw_r1];
-		case op.AR2W: return (mem[hw_r2+3]<<24)+(mem[hw_r2+2]<<16)+(mem[hw_r2+1]<<8)+mem[hw_r2];
-		case op.AR3W: return (mem[hw_r3+3]<<24)+(mem[hw_r3+2]<<16)+(mem[hw_r3+1]<<8)+mem[hw_r3];
+		case op.AR1W: return (mem[hw_r1]<<24)+(mem[hw_r1+1]<<16)+(mem[hw_r1+2]<<8)+mem[hw_r1+3];
+		case op.AR2W: return (mem[hw_r2]<<24)+(mem[hw_r2+1]<<16)+(mem[hw_r2+2]<<8)+mem[hw_r2+3];
+		case op.AR3W: return (mem[hw_r3]<<24)+(mem[hw_r3+1]<<16)+(mem[hw_r3+2]<<8)+mem[hw_r3+3];
 	}
 }
 

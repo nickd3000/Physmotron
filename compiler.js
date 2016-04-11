@@ -183,15 +183,15 @@ function compile(source)
 		if (sourceToCodeMap[line][0]==null) continue;
 		for (var i=0;i<sourceToCodeMap[line][1];i++) {
 			//console.log("sTcM: "+byteCode[sourceToCodeMap[line][0]+i]);
-			byteLine += " "+padString(byteCode[sourceToCodeMap[line][0]+i],4);
+			byteLine += " "+padString(byteCode[sourceToCodeMap[line][0]+i].toString(16),3);
 		}
 
 		var outp = "s[" + line + "]";
 		outp = padString(outp,6);
-		outp = outp + "b[" + (sourceToCodeMap[line][0]+hw_programDataStart) + "]";
+		outp = outp + "b[" + (sourceToCodeMap[line][0]+hw_programDataStart).toString(16) + "]";
 		outp = padString(outp,12);
 		outp+=byteLine;
-		outp = padString(outp,30);
+		outp = padString(outp,35);
 		outp+=lines[line];
 		console.log(outp);
 		compileOutput = compileOutput + outp + "\n";

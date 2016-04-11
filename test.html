@@ -5,6 +5,7 @@
 	   font-family: monospace;
 	   font-size: 10px;
 	}
+	regs { white-space: pre-wrap;}
 </style>
 <title>My Web Page</title>
 <script src="instructions.js"></script>
@@ -51,9 +52,11 @@ var2: db 42    ; Declare a byte containing 12
 
 <textarea id="output" spellcheck="false" autofocus="true" rows="10" cols="65" wrap="off">
 </textarea>
-
+<textarea id="regs" spellcheck="false" autofocus="true" rows="10" cols="65" wrap="off">
+</textarea>
 
 	<button onclick="webCompile()">Compile</button>
+	<button onclick="webShowRegs()">Get Registers</button>
 <div id="fps">fps</div>
 
 </body>

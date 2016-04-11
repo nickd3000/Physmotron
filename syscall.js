@@ -3,16 +3,24 @@
 var SYS_LOGBYTE = 1;
 var SYS_LOGWORD = 2;
 var SYS_LOGCHAR = 3;
-var SYS_SETPIXEL = 4;
-var SYS_MUL	= 30;
-var SYS_DIV	= 31;
-var SYS_TEXT = 5; // b x,b y, w ptr
+var SYS_TEXT = 5; 			// bx,by,wptr
+
+var SYS_SETPIXEL = 20;
+var SYS_RGBTOPIXEL = 21;	// (bytes)r,g,b ->
+var SYS_PIXELTORGB = 22; 	// byte -> (bytes)r,g,b
+
+var SYS_MUL		= 30;
+var SYS_DIV		= 31;
+var SYS_SQRT	= 32;
+var SYS_MIN		= 33;
+var SYS_MAX		= 34;
+
 
 
 function sysCall(id)
 {
 	//console.log("SYSCALL ID: "+id);
-	var c,x,y,a,b,p;
+	var c,x,y,a,b,p,r,g; // Misc reusable variables.
 	switch(id) {
 		case SYS_LOGBYTE: console.log(popByte()); break;
 		case SYS_LOGWORD: console.log(popWord()); break;
@@ -45,6 +53,15 @@ function sysCall(id)
 			b=popWord();
 			pushWord((b/a)|0);
 			break;
+		case SYS_RGBTOPIXEL:
+			r=popByte();
+			g=popByte();
+			b=popByte();
+			p=(r&3)+((g&7)<<2)+((b&7)<<5);
+			pushByte(p&0xff);
+		break;
+		case SYS_PIXELTORGB:
+		break;
 
 	}
 }

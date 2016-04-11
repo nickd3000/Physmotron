@@ -102,7 +102,7 @@ var initDisplay = function ()
 function redrawScreen(amount)
 {
 	"use strict";
-	var mode = mem[hw_screenMode];
+	var mode = mem[hw_screenMode]|0;
 
 	for (var i=0;i<amount;i++) {
 		scanLine=scanLine%0xff;
@@ -124,9 +124,10 @@ function renderScanlineGraphicsMode()
 	"use strict";
 
 	var pixel=0, x4=0;
+	var yShift = 256*scanLine;
 	for (var x=0;x<256;x++) {
 		x4 = x*4;
-		pixel = mem[hw_screenPixelLocation+x+(256*scanLine)];
+		pixel = mem[hw_screenPixelLocation+x+yShift];
 		rowData.data[x4] = (pixel&3)*85;
 		rowData.data[x4+1] = ((pixel>>2)&7)*36;
 		rowData.data[x4+2] = ((pixel>>5)&7)*36;

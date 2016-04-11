@@ -18,3 +18,11 @@ function webCompile()
 	document.getElementById("canvas").focus();
 	//requestAnimationFrame(draw);
 }
+
+
+function webShowRegs()
+{
+	var strDisplayRegisters = displayRegisters();
+	//strDisplayRegisters = strDisplayRegisters.replace(new RegExp('\n','g'), '<br />');
+	document.getElementById("regs").value = strDisplayRegisters;
+}

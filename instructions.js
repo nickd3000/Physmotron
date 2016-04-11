@@ -23,9 +23,9 @@ var opcode = { NO_OP: 0,
 	MOV_AB_R1: 16,		// Move r1 to word address
 	MOV_AB_R2: 17,
 	MOV_AB_R3: 18,
-	MOV_R1_AW: 19,		// Move byte at word address to R1
-	MOV_R2_AW: 20,
-	MOV_R3_AW: 21,
+	MOV_R1_AB: 19,		// Move byte at word address to R1
+	MOV_R2_AB: 20,
+	MOV_R3_AB: 21,
 
 	MOV_AR1_R2: 22,	// Move r2 to address r1
 	MOV_AR1_R3: 23,
@@ -48,6 +48,21 @@ var opcode = { NO_OP: 0,
 	MOV_AB_BY: 46,		// Move next byte to byte address
 	MOV_AB_AB: 47,		// Move next byte address to byte address
 
+	MOV_AW_R1: 48,		// Move word from register to address.
+	MOV_AW_R2: 49,
+	MOV_AW_R3: 50,
+
+	MOV_R1_AW: 51,		// Move word R1 to word address
+	MOV_R2_AW: 52,
+	MOV_R3_AW: 53,
+
+	MOV_AR1_AB: 54,		// Move byte at address to address at r1
+	MOV_AR2_AB: 55,
+	MOV_AR3_AB: 56,
+	MOV_AR1_AW: 57,		// Move word at address to address at r1
+	MOV_AR2_AW: 58,
+	MOV_AR3_AW: 59,
+
 	CMP_R1_R2: 60,		// compare registers
 	CMP_R1_R3: 61,
 	CMP_R2_R1: 62,
@@ -63,12 +78,27 @@ var opcode = { NO_OP: 0,
 
 	CMP_AB_BY: 72,	// Experimental
 
+	MOV_R1_AR1: 73, // move these up next to other MOV instructions when reordering.
+	MOV_R2_AR2: 74,
+	MOV_R3_AR3: 75,
+	MOV_R1_AR1W: 76, // move these up next to other MOV instructions when reordering.
+	MOV_R2_AR2W: 77,
+	MOV_R3_AR3W: 78,
+
+	MOV_AW_WO: 79,		// Move next word to qord address
+	MOV_AW_AW: 80,		// Move next word address to word address
+
+
+/// SPACE - 10
+
 	INC_R1: 90,		// Incriment
 	INC_R2: 91,
 	INC_R3: 92,
 	DEC_R1: 93,		// Decriment
 	DEC_R2: 94,
 	DEC_R3: 95,
+
+/// SPACE - 5
 
 	// Jumps
 	JMP: 100,			// Jump to next word.
@@ -80,6 +110,8 @@ var opcode = { NO_OP: 0,
 	JGE: 106,
 	JC: 107,
 	JCC: 108,
+
+/// SPACE - 12
 
 	PUSHB_R1: 120,
 	PUSHB_R2: 121,
@@ -111,6 +143,7 @@ var opcode = { NO_OP: 0,
 	SUB_R2_BY: 160,
 	SUB_R3_BY: 161,
 
+/// SPACE - 9
 
 	ADD_R1_R2: 170,		// ADD : R1: R1 + R2
 	ADD_R1_R3: 171,
@@ -146,10 +179,15 @@ var opcode = { NO_OP: 0,
 	SHR_R2: 201,
 	SHR_R3: 202,
 
+/// SPACE - 18
+
 	CLC: 220,	// clear carry flag
 	CLZ: 221, 	// clear zero flag
 	CLS: 222, 	// clear sign flag
 	CLB: 223, 	// clear break flag
+
+/// SPACE - 27
+
 
 	SYSCALL: 250,		// Syscall, next byte specifies what syscall.
 	CAL: 251,
@@ -275,9 +313,9 @@ var imap = [
 	[opcode.MOV_AB_R2,		itype.MOV,	op.AB,	op.R2],
 	[opcode.MOV_AB_R3,		itype.MOV,	op.AB,	op.R3],
 	//
-	[opcode.MOV_R1_AW,		itype.MOV,	op.R1,	op.AB],	// Move byte at address to r1.
-	[opcode.MOV_R2_AW,		itype.MOV,	op.R2,	op.AB],
-	[opcode.MOV_R3_AW,		itype.MOV,	op.R3,	op.AB],
+	[opcode.MOV_R1_AB,		itype.MOV,	op.R1,	op.AB],	// Move byte at address to r1.
+	[opcode.MOV_R2_AB,		itype.MOV,	op.R2,	op.AB],
+	[opcode.MOV_R3_AB,		itype.MOV,	op.R3,	op.AB],
 	//
 	[opcode.MOV_AR1_R2,	itype.MOV,	op.AR1B,	op.R2],	// Move r2 to address in r1
 	[opcode.MOV_AR1_R3,	itype.MOV,	op.AR1B,	op.R3],
@@ -300,6 +338,22 @@ var imap = [
 	[opcode.MOV_AB_BY,		itype.MOV,	op.AB,	op.BY], // Move next byte to word address
 	[opcode.MOV_AB_AB,		itype.MOV,	op.AB,	op.AB], // Move byte at address to byte at address
 
+	[opcode.MOV_AW_R1,		itype.MOV,	op.AW,	op.R1], // Move word from register to address.
+	[opcode.MOV_AW_R2,		itype.MOV,	op.AW,	op.R2],
+	[opcode.MOV_AW_R3,		itype.MOV,	op.AW,	op.R3],
+
+	[opcode.MOV_R1_AW,		itype.MOV,	op.R1,	op.AW], // Move word R1 to word address
+	[opcode.MOV_R2_AW,		itype.MOV,	op.R2,	op.AW],
+	[opcode.MOV_R3_AW,		itype.MOV,	op.R3,	op.AW],
+
+
+	[opcode.MOV_AR1_AB,		itype.MOV,	op.AR1B,op.AB],	// Move byte at address to address at r1
+	[opcode.MOV_AR2_AB,		itype.MOV,	op.AR2B,op.AB],
+	[opcode.MOV_AR3_AB,		itype.MOV,	op.AR3B,op.AB],
+	[opcode.MOV_AR1_AW,		itype.MOV,	op.AR1B,op.AW],	// Move word at address to address at r1
+	[opcode.MOV_AR2_AW,		itype.MOV,	op.AR2B,op.AW],
+	[opcode.MOV_AR3_AW,		itype.MOV,	op.AR3B,op.AW],
+
 	//
 	[opcode.CMP_R1_R2,		itype.CMP,	op.R1,	op.R2],	// Compare registers.
 	[opcode.CMP_R1_R3,		itype.CMP,	op.R1,	op.R3],
@@ -316,6 +370,16 @@ var imap = [
 
 	[opcode.CMP_AB_BY,		itype.CMP,	op.AB,	op.BY], // Experimental.
 
+	[opcode.MOV_R1_AR1,	itype.MOV,	op.R1,	op.AR1B],
+	[opcode.MOV_R2_AR2,	itype.MOV,	op.R2,	op.AR2B],
+	[opcode.MOV_R3_AR3,	itype.MOV,	op.R3,	op.AR3B],
+	[opcode.MOV_R1_AR3W,	itype.MOV,	op.R1,	op.AR1W],
+	[opcode.MOV_R2_AR3W,	itype.MOV,	op.R2,	op.AR2W],
+	[opcode.MOV_R3_AR3W,	itype.MOV,	op.R3,	op.AR3W],
+
+
+	[opcode.MOV_AW_WO,	itype.MOV,	op.AW,	op.WO],
+	[opcode.MOV_AW_AW,	itype.MOV,	op.AW,	op.AW],
 
 	//
 	[opcode.INC_R1,			itype.INC,	op.R1,	null],	// Incriment

@@ -6,6 +6,17 @@ http://ref.x86asm.net/coder.html
 https://en.wikibooks.org/wiki/X86_Assembly
 
 
+[*] fixed move word from register to memory. Ex:
+	mov r1, word 512
+	mov word [10], word r1
+	mov word r2, word [10]
+[*] added move word/byte from address to register address ex:
+	move byte [r3], byte [var1]
+[*] mov r1, [r1]  (note same reg)
+[*] bug near line 110 in display? ... can't see a problem.
+[*] quick and dirty register display on web page
+[*] added mov address of register etc to register
+[*] fixed getSource when retrieving words (bytes were back to front)
 ==
 [*] rearranged memory map
 [*] user data / code now starts at hw_programDataStart 0x11000
@@ -21,14 +32,11 @@ https://en.wikibooks.org/wiki/X86_Assembly
 	up[510] down[511] left[512 right[513] fire1[514] fire2[515]
 [*] fixed compare byte at address with byte (eg: cmp [511], 1)
 ==
-
-[ ] left and right shift.
-[ ] add instructions to clear equal and less than flags
 [*] Allow comments using the ; character
 [ ] Consume tab in web form -- how though?
 [*] Make we form use fixed width font
-[ ] draw compile output to web page
-[ ] add basic input - cursor keys and mouse
+[*] draw compile output to web page
+[*] add basic input - cursor keys and mouse
 
 
 [ ] add new opcodes:
@@ -40,14 +48,14 @@ https://en.wikibooks.org/wiki/X86_Assembly
 	[*] JL	less
 	[*] JLE	less/equal
 	// stack
-	[ ] push all regs
-	[ ] pop all regs
+	[*] push all regs
+	[*] pop all regs
 	// maths
-	[ ] SUB
-	[ ] mul
-	[ ] div
-	[ ] shl
-	[ ] shr
+	[*] SUB
+	[*] mul (syscall)
+	[*] div (syscall)
+	[*] shl
+	[*] shr
 	// logic
 	[ ] xor
 	[ ] or
@@ -55,11 +63,10 @@ https://en.wikibooks.org/wiki/X86_Assembly
 	// misc
 	[ ] xchg
 
+what are these?
 	[ ] sa
 	[ ] cwd
 	[ ] sar
-
-
 	[ ] in
 	[ ] test
 
