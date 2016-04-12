@@ -15,12 +15,17 @@ var SYS_SQRT	= 32;
 var SYS_MIN		= 33;
 var SYS_MAX		= 34;
 
+var SYS_MEMSET	= 50;	// byte value, word start, word length
+var SYS_MEMCPY	= 51;	// word src, word dest, word length
+var SYS_MEMCPYI	= 52;	// word src, word dest, word length, byte ignore
+
 
 
 function sysCall(id)
 {
 	//console.log("SYSCALL ID: "+id);
 	var c,x,y,a,b,p,r,g; // Misc reusable variables.
+	var start, length, val, src, dst;
 	switch(id) {
 		case SYS_LOGBYTE: console.log(popByte()); break;
 		case SYS_LOGWORD: console.log(popWord()); break;
@@ -57,11 +62,34 @@ function sysCall(id)
 			r=popByte();
 			g=popByte();
 			b=popByte();
-			p=(r&3)+((g&7)<<2)+((b&7)<<5);
+			p=((r>>6)&3)+(((g>>5)&7)<<2)+(((b>>5)&7)<<5);
 			pushByte(p&0xff);
 		break;
 		case SYS_PIXELTORGB:
 		break;
-
+		case SYS_MEMSET: // byte value, word start, word length
+			val = popByte();
+			start = popWord();
+			length = popWord();
+			for (a=start;a<start+length;a++) mem[a]=val;
+		break;
+		case SYS_MEMCPY: // word src, word dest, word length
+			src = popWord();
+			dst = popWord();
+			length = popWord();
+			for (a=0;a<length;a++) {
+				 mem[dst+a]=mem[src+a];
+			}
+		break;
+		case SYS_MEMCPYI: // word src, word dest, word length, byte ignore
+			src = popWord();
+			dst = popWord();
+			length = popWord();
+			g = popByte();	// value to ignore.
+			for (a=0;a<length;a++) {
+				if (mem[src+a]!=g)
+				 mem[dst+a]=mem[src+a];
+			}	 
+		break;
 	}
 }

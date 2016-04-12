@@ -125,9 +125,10 @@ function renderScanlineGraphicsMode()
 
 	var pixel=0, x4=0;
 	var yShift = 256*scanLine;
+	var pixelLocation = getWord(hw_screenOffset);
 	for (var x=0;x<256;x++) {
 		x4 = x*4;
-		pixel = mem[hw_screenPixelLocation+x+yShift];
+		pixel = mem[pixelLocation+x+yShift];
 		rowData.data[x4] = (pixel&3)*85;
 		rowData.data[x4+1] = ((pixel>>2)&7)*36;
 		rowData.data[x4+2] = ((pixel>>5)&7)*36;

@@ -6,6 +6,12 @@ http://ref.x86asm.net/coder.html
 https://en.wikibooks.org/wiki/X86_Assembly
 
 
+tony's bug
+mov word r2,word [r1] -- doesnt work
+mov word r1,word [r1] -- compiles but no effect
+
+
+
 [*] fixed move word from register to memory. Ex:
 	mov r1, word 512
 	mov word [10], word r1
@@ -94,3 +100,29 @@ sys 31        // divide mouse x by 32
 popw r3       // retrieve result
 mov [503],r3  // put result into BG colour
 jmp start
+
+
+
+New operand style (2 operand instructions)
+[opcode 6bit 64][operand 5bit 32][operand 5bit 32]
+[opcode 6bit 64][ 9 bit offset ]
+
+0-7		8	r1 r2 r3 r4 r5 r6 r7 r8
+8-15	8	[reg 1-8]
+16-23	8	[reg 1-8 + next word]
+24		1	next byte literal
+25		1	next word literal
+26		1
+			[sp]
+			[sp+ next word]
+		1	flags
+		1	pc
+16-19
+20-23
+24-27
+28-31
+
+mov [221112],byte 1
+mov [221112],word 1
+push word 32
+push byte 13

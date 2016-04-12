@@ -88,8 +88,15 @@ var opcode = { NO_OP: 0,
 	MOV_AW_WO: 79,		// Move next word to qord address
 	MOV_AW_AW: 80,		// Move next word address to word address
 
-
-/// SPACE - 10
+	MOV_AR1_WR1: 81,	// Move r2 to address r1
+	MOV_AR1_WR2: 82,	// Move r2 to address r1
+	MOV_AR1_WR3: 83,
+	MOV_AR2_WR1: 84,
+	MOV_AR2_WR2: 85,
+	MOV_AR2_WR3: 86,
+	MOV_AR3_WR1: 87,
+	MOV_AR3_WR2: 88,
+	MOV_AR3_WR3: 89,
 
 	INC_R1: 90,		// Incriment
 	INC_R2: 91,
@@ -373,13 +380,23 @@ var imap = [
 	[opcode.MOV_R1_AR1,	itype.MOV,	op.R1,	op.AR1B],
 	[opcode.MOV_R2_AR2,	itype.MOV,	op.R2,	op.AR2B],
 	[opcode.MOV_R3_AR3,	itype.MOV,	op.R3,	op.AR3B],
-	[opcode.MOV_R1_AR3W,	itype.MOV,	op.R1,	op.AR1W],
-	[opcode.MOV_R2_AR3W,	itype.MOV,	op.R2,	op.AR2W],
+	[opcode.MOV_R1_AR1W,	itype.MOV,	op.R1,	op.AR1W],
+	[opcode.MOV_R2_AR2W,	itype.MOV,	op.R2,	op.AR2W],
 	[opcode.MOV_R3_AR3W,	itype.MOV,	op.R3,	op.AR3W],
 
 
 	[opcode.MOV_AW_WO,	itype.MOV,	op.AW,	op.WO],
 	[opcode.MOV_AW_AW,	itype.MOV,	op.AW,	op.AW],
+
+	[opcode.MOV_AR1_WR1,	itype.MOV,	op.AR1W,op.R1],
+	[opcode.MOV_AR1_WR2,	itype.MOV,	op.AR1W,op.R2],
+	[opcode.MOV_AR1_WR3,	itype.MOV,	op.AR1W,op.R3],
+	[opcode.MOV_AR2_WR1,	itype.MOV,	op.AR2W,op.R1],
+	[opcode.MOV_AR2_WR2,	itype.MOV,	op.AR2W,op.R2],
+	[opcode.MOV_AR2_WR3,	itype.MOV,	op.AR2W,op.R3],
+	[opcode.MOV_AR3_WR1,	itype.MOV,	op.AR3W,op.R1],
+	[opcode.MOV_AR3_WR2,	itype.MOV,	op.AR3W,op.R2],
+	[opcode.MOV_AR3_WR3,	itype.MOV,	op.AR3W,op.R3],
 
 	//
 	[opcode.INC_R1,			itype.INC,	op.R1,	null],	// Incriment

@@ -19,6 +19,7 @@ var hw_colBG = 1025;
 var hw_scanLine = 1026;
 var hw_cursorX = 1027;		// Text cursor x
 var hw_cursorY = 1028;		// text cursor y
+var hw_screenOffset = 1029;	// Word pointer to display pixels.
 // input
 var hw_mouseX = 1088;		// Text cursor x
 var hw_mouseY = 1089;		// text cursor y
@@ -36,7 +37,7 @@ var hw_fontSize = 1024; // 128*8=
 var hw_screenTextLocation = 0xA00; // 1024
 var hw_screenTextSize = 1024;
 
-var hw_screenPixelLocation = 0x1000;
+var hw_screenPixelLocation = 0x1000; // 4096
 var hw_screenPixelSize = 65536; // 0xffff
 var hw_screenPixelLocationEnd = 0x10fff;
 
@@ -73,6 +74,7 @@ function resetMachine() {
 	hw_stackTop = memSize-0xff;
 	hw_sp = hw_stackTop;
 	hw_flags = 0;
+	storeWord(hw_screenOffset, hw_screenPixelLocation);
 }
 
 function main() {
@@ -459,7 +461,8 @@ function getByte(addr)
 function getWord(addr)
 {
 	var combined = 0;
-	combined = (mem[addr]<<8)+mem[addr+1];
+	combined = (mem[addr]<<24)+(mem[addr+1]<<16)+(mem[addr+2]<<8)+mem[addr+3];
+	//(mem[hw_r3]<<24)+(mem[hw_r3+1]<<16)+(mem[hw_r3+2]<<8)+mem[hw_r3+3];
 	return combined;
 }
 
