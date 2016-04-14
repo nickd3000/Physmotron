@@ -29,7 +29,7 @@ var rowData;
 var toggle=255;
 var onePixel = null;
 
-var initDisplay = function ()
+function initDisplay()
 {
 	"use strict";
 	canvas = document.getElementById('canvas');

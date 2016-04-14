@@ -5,6 +5,7 @@
 
 // Machine instruction definitions.
 
+
 // Operator classes
 var opTypes = {
 	REG: 0,		// Register
