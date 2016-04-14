@@ -3,18 +3,12 @@ function getSampleAssemblerCode(id) {
 
 	var NL=" \n", str = "";
 
-		// Test push all and pop all
+		// Scratch
 		if (id==11)
 		{
-			str = 	'mov r1,1 ' + NL +
-					'mov r2,2 ' + NL +
-					'mov r3,3 ' + NL +
-					'pua ' + NL +
-					'mov r1,0 ' + NL +
-					'mov r2,0 ' + NL +
-					'mov r3,0 ' + NL +
-					'poa ' + NL +
-					'brk' + NL ;
+			//str = 	'mov r1, [var1]' + NL ;
+			str = 	'brk' + NL ;
+			//str = 	'var1: db 12' + NL;
 			return str;
 		}
 

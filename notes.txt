@@ -105,22 +105,37 @@ jmp start
 
 New operand style (2 operand instructions)
 [opcode 6bit 64][operand 5bit 32][operand 5bit 32]
-[opcode 6bit 64][ 9 bit offset ]
-
+each 5 bit operand can represent:
 0-7		8	r1 r2 r3 r4 r5 r6 r7 r8
-8-15	8	[reg 1-8]
-16-23	8	[reg 1-8 + next word]
-24		1	next byte literal
-25		1	next word literal
-26		1
-			[sp]
-			[sp+ next word]
-		1	flags
-		1	pc
-16-19
-20-23
-24-27
-28-31
+8-15	8	byte at address of [reg 0-8]
+16-23	8	dword at address of [reg 0-8]
+24-31	8	byte at address of [reg 0-8 + next word]
+32-39	8	dword at address of [reg 0-8 + next word]
+40		1	next byte literal
+41		1	next dword literal
+22		1	byte at address of [next dword]
+23		1	dword at address of [next dword]
+24		1	[sp]
+25		1	[sp+ next word]
+26		1	flags
+27		1	pc
+28		1	sp
+29
+30
+31
+128-255 - packed literals.
+
+Alternatively... if we use 3 bytes then visualising the assembler will be a lot cleaner...
+If we use a full byte, we can have some nice packed literals -1,0,1,2,4,8 etc..
+And lot's of registers...
+
+Tony's literals:
+1,60,106,0,2,256,0xa,0x9,7,16,0,6,7,0xf,32,1024,0xff00,0x1000
+
+
+
+* either opcodes can be for byte/word or the operand can specify.
+
 
 mov [221112],byte 1
 mov [221112],word 1

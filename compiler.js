@@ -145,16 +145,20 @@ function compile(source)
 		//console.log("FOUND : " + itp + " for " + tokens[0].toLowerCase());
 
 		// Search for opcode using instruction type and operand types.
-		oc = findInstruction(itp, op1, op2);
+		//oc = findInstruction(itp, op1, op2);
 
+/*
 		if (oc===-1) {
 			console.log("COMPILE ERROR: Opcode not recognised at line " + line);
 			console.log("  > " + lines[line]);
 			compileOutput = compileOutput + "COMPILE ERROR: at line " + line + "\n";
 			compileOutput = compileOutput + "  > " + lines[line] + "\n";
 		}
+*/
 
-		compiledLine = generateBytecodeLine(oc,op1,op2,byteCode.length);
+		//compiledLine = generateBytecodeLine(oc,op1,op2,byteCode.length);
+		compiledLine = generateBytecodeLineNew(itp,op1,op2,byteCode.length);
+
 		//byteCode += compiledLine;
 		// Add compiled line to bytecode.
 		sourceToCodeMap[line]=[byteCode.length, compiledLine.length];
@@ -177,13 +181,18 @@ function compile(source)
 
 	console.log("Finished compiling  " + lines.length + " lines to " + byteCode.length + " bytes.");
 
+
+	// Prepare compiler debug output
 	for (line = 0;line<sourceToCodeMap.length;line++)
 	{
 		var byteLine = "";
-		if (sourceToCodeMap[line][0]==null) continue;
+		var hex="";
+		if (sourceToCodeMap[line][0]===null) continue;
 		for (var i=0;i<sourceToCodeMap[line][1];i++) {
 			//console.log("sTcM: "+byteCode[sourceToCodeMap[line][0]+i]);
-			byteLine += " "+padString(byteCode[sourceToCodeMap[line][0]+i].toString(16),3);
+			hex = byteCode[sourceToCodeMap[line][0]+i].toString(16);
+			if (hex.length===1) hex = "0"+hex;
+			byteLine += " "+padString(hex,3);
 		}
 
 		var outp = "s[" + line + "]";
@@ -191,7 +200,7 @@ function compile(source)
 		outp = outp + "b[" + (sourceToCodeMap[line][0]+hw_programDataStart).toString(16) + "]";
 		outp = padString(outp,12);
 		outp+=byteLine;
-		outp = padString(outp,35);
+		outp = padString(outp,45);
 		outp+=lines[line];
 		console.log(outp);
 		compileOutput = compileOutput + outp + "\n";
@@ -332,8 +341,148 @@ function finditypeFromName(str)
 }
 
 
+function generateBytecodeLineNew(opcode, op1, op2, curCodeLength)
+{
+	var outputCode = [];
+	var pos=0;
+	outputCode[pos++] = opcode;
+
+	// [opType, string, value, label ID, regId]
+	if (op1!==null) {
+		 encoded1 = encodeOperator(op1[0],op1[1],op1[2],op1[4]);
+		 outputCode[pos++]=encoded1[0];
+	}
+	if (op2!==null) {
+		 encoded2 = encodeOperator(op2[0],op2[1],op2[2],op2[4]);
+		 outputCode[pos++]=encoded2[0];
+	}
+	if (op1!==null) {
+		if (encoded1[1]==1) {	// Byte of data
+			outputCode[pos++]=encoded1[2]; // Output byte value
+		} else if (encoded1[1]==2 || encoded1[1]==3) {		// Word of data or address
+			if (op1[3]!==-1) registerLabelUse(op1[3], pos+curCodeLength);
+			//if (encoded1[3]!==-1) registerLabelUse(encoded1[3], pos+curCodeLength);
+			outputCode[pos++] = ((encoded1[2]>>24)&0xff)|0;
+			outputCode[pos++] = ((encoded1[2]>>16)&0xff)|0;
+			outputCode[pos++] = ((encoded1[2]>>8)&0xff)|0;
+			outputCode[pos++] = (encoded1[2]&0xff)|0;
+		}
+	}
+
+	if (op2!==null) {
+		if (encoded2[1]==1) {	// Byte of data
+			outputCode[pos++]=encoded2[2]; // Output byte value
+		} else if (encoded2[1]==2 || encoded2[1]==3) {		// Word of data or address
+			//debugger;
+			if (op2[3]!==-1) registerLabelUse(op2[3], pos+curCodeLength);
+			//if (encoded2[3]!==-1) registerLabelUse(encoded2[3], pos+curCodeLength);
+			outputCode[pos++] = ((encoded2[2]>>24)&0xff)|0;
+			outputCode[pos++] = ((encoded2[2]>>16)&0xff)|0;
+			outputCode[pos++] = ((encoded2[2]>>8)&0xff)|0;
+			outputCode[pos++] = (encoded2[2]&0xff)|0;
+		}
+	}
+
+
+/*
+	if (op1!==null && op1[0]===op.BY) outputCode[pos++] = op1[2]|0;
+	if (op1!==null && (op1[0]===op.WO || op1[0]===op.AB || op1[0]===op.AW)) {
+		if (op1[3]!==-1) registerLabelUse(op1[3], pos+curCodeLength);
+		outputCode[pos++] = ((op1[2]>>24)&0xff)|0;
+		outputCode[pos++] = ((op1[2]>>16)&0xff)|0;
+		outputCode[pos++] = ((op1[2]>>8)&0xff)|0;
+		outputCode[pos++] = (op1[2]&0xff)|0;
+	}
+
+	if (op2!==null && op2[0]===op.BY) outputCode[pos++] = op2[2]|0;
+	if (op2!==null && (op2[0]===op.WO || op2[0]===op.AB || op2[0]===op.AW)) {
+		if (op2[3]!==-1) registerLabelUse(op2[3], pos+curCodeLength);
+		outputCode[pos++] = ((op2[2]>>24)&0xff)|0;
+		outputCode[pos++] = ((op2[2]>>16)&0xff)|0;
+		outputCode[pos++] = ((op2[2]>>8)&0xff)|0;
+		outputCode[pos++] = (op2[2]&0xff)|0;
+	}
+*/
+	return outputCode;
+}
+
+function encodeOperator(opType, string, value, regId) {
+
+	// EDM: extra data mode (0, 1=next byte, 2=next word, 3=next address)
+	// format = [byte, edm, data ]
+	var encoded = [0,0,0];
+
+	if (regId<1) regId=0;
+	if (regId>8) regId=8;
+	if (opType===opTypes.REG) {
+		encoded[0] = 0 + regId;
+	}
+	if (opType===opTypes.BAREG) {
+		encoded[0] = 8 + regId;
+	}
+	if (opType===opTypes.WAREG) {
+		encoded[0] = 16 + regId;
+	}
+	if (opType===opTypes.BLIT) {
+		encoded[0] = 40;
+		encoded[1] = 1; // Byte
+		encoded[2] = value;
+	}
+	if (opType===opTypes.WLIT) {
+		encoded[0] = 41;
+		encoded[1] = 2; // Word
+		encoded[2] = value;
+	}
+	if (opType===opTypes.BADDR) {
+		encoded[0] = 42;
+		encoded[1] = 3; // value is address
+		encoded[2] = value;
+	}
+	if (opType===opTypes.WADDR) {
+		encoded[0] = 43;
+		encoded[1] = 3; // value is address
+		encoded[2] = value;
+	}
+	return encoded;
+}
+
+function decodeOperator(val)
+{
+	// format [opType, regId]
+	var decoded = [-1,-1];
+	if (val>=0 && val<=7) {
+		decoded[0] = opTypes.REG;
+		decoded[1] = val;
+	}
+	if (val>=8 && val<=15) {
+		decoded[0] = opTypes.BAREG;
+		decoded[1] = val-8;
+	}
+	if (val>=16 && val<=31) {
+		decoded[0] = opTypes.WAREG;
+		decoded[1] = val-16;
+	}
+
+	if (val==40) {
+		decoded[0] = opTypes.BLIT;
+	}
+	if (val==41) {
+		decoded[0] = opTypes.WLIT;
+	}
+	if (val==42) {
+		decoded[0] = opTypes.BADDR;
+	}
+	if (val==43) {
+		decoded[0] = opTypes.WADDR;
+	}
+
+	return decoded;
+}
+
 function generateBytecodeLine(opcode, op1, op2, curCodeLength)
 {
+	// remove this function soon
+	/*
 	var outputCode = [];
 	var pos=0;
 	outputCode[pos++] = opcode;
@@ -356,7 +505,7 @@ function generateBytecodeLine(opcode, op1, op2, curCodeLength)
 		outputCode[pos++] = (op2[2]&0xff)|0;
 	}
 
-	return outputCode;
+	return outputCode; */
 }
 
 function findInstruction(iType, op1, op2)
@@ -413,35 +562,36 @@ function parseOperand(operand, isWord)
 {
 	// Result contains the operand type id, the original string,
 	// and the integer representation if applicable.
-	var result = [0,operand,0,-1]; // [type, string, value, label ID]
+	var result = [0,operand,0,-1,0]; // [opType, string, value, label ID, regId]
 	var strLength = operand.length;
 
 	//console.log("parseOperand input:" + op + ":");
 
 	// Detect the registers.
-	if (isWord!==true) {
-		switch (operand) {
-			case "r1": result[0]=op.R1; break;
-			case "r2": result[0]=op.R2; break;
-			case "r3": result[0]=op.R3; break;
-			case '[r1]': result[0]=op.AR1B; break;
-			case "[r2]": result[0]=op.AR2B; break;
-			case "[r3]": result[0]=op.AR3B; break;
-		}
+	switch (operand) {
+		case "r1": result[0]=opTypes.REG; result[4]=0; break;
+		case "r2": result[0]=opTypes.REG; result[4]=1; break;
+		case "r3": result[0]=opTypes.REG; result[4]=2; break;
+		case "r4": result[0]=opTypes.REG; result[4]=3; break;
+		case "r5": result[0]=opTypes.REG; result[4]=4; break;
+		case "r6": result[0]=opTypes.REG; result[4]=5; break;
+		case "r7": result[0]=opTypes.REG; result[4]=6; break;
+		case "r8": result[0]=opTypes.REG; result[4]=7; break;
+		case '[r1]': result[0]=opTypes.BAREG; result[4]=0; break;
+		case '[r2]': result[0]=opTypes.BAREG; result[4]=1; break;
+		case '[r3]': result[0]=opTypes.BAREG; result[4]=2; break;
+		case '[r4]': result[0]=opTypes.BAREG; result[4]=3; break;
+		case '[r5]': result[0]=opTypes.BAREG; result[4]=4; break;
+		case '[r6]': result[0]=opTypes.BAREG; result[4]=5; break;
+		case '[r7]': result[0]=opTypes.BAREG; result[4]=6; break;
+		case '[r8]': result[0]=opTypes.BAREG; result[4]=7; break;
 	}
+	if (isWord===true) {
+		if (result[0]==opTypes.BAREG) result[0]=opTypes.WAREG;
+	}
+
 	if (result[0]!==0) return result;
 
-	if (isWord===true) {
-		switch (operand) {
-			case "r1": result[0]=op.R1; break;
-			case "r2": result[0]=op.R2; break;
-			case "r3": result[0]=op.R3; break;
-			case '[r1]': result[0]=op.AR1W; break;
-			case "[r2]": result[0]=op.AR2W; break;
-			case "[r3]": result[0]=op.AR3W; break;
-		}
-	}
-	if (result[0]!==0) return result;
 
 	//console.log("parseOperand result:" + result[0]);
 
@@ -452,9 +602,9 @@ function parseOperand(operand, isWord)
 	if (isNaN(parseInt(operand))===false)
 	{
 		if (isWord===true) {
-			result[0] = op.WO;	// Byte
+			result[0] = opTypes.WLIT;	// Word literal
 		} else {
-			result[0] = op.BY;	// Word
+			result[0] = opTypes.BLIT;	// Byte literal
 		}
 		result[2] = parseInt(operand)|0;
 		return result;
@@ -467,8 +617,8 @@ function parseOperand(operand, isWord)
 		strMid = operand.substring(1,operand.length-1); // Extract the string between [ and ].
 		if (isNaN(parseInt(strMid))===false)
 		{
-			if (isWord===true) result[0] = op.AW; // word address
-			else result[0] = op.AB; // word address
+			if (isWord===true) result[0] = opTypes.WADDR; // word address
+			else result[0] = opTypes.BADDR; // word address
 			result[2] = parseInt(strMid);
 			return result;
 		}
@@ -483,9 +633,9 @@ function parseOperand(operand, isWord)
 		if (labelList[i][0]==operand) {
 			//console.log("LABEL USE FOUND!! " + operand);
 
-			//if (isWord===true) result[0] = op.WO;
-			//else result[0] = op.BY;
-			result[0] = op.WO;
+			if (isWord===true) result[0] = opTypes.WADDR;
+			else result[0] = opTypes.BADDR;
+			//result[0] = op.WO;
 
 			result[2] = 0xffffffff;
 			result[3] = i; //record the label id for the detected label.
@@ -503,8 +653,8 @@ function parseOperand(operand, isWord)
 			if (labelList[j][0]==strMid) {
 				// console.log("LABEL (pointer) USE FOUND!! " + operand);
 
-				if (isWord===true) result[0] = op.AW; // word address
-				else result[0] = op.AB;
+				if (isWord===true) result[0] = opTypes.WADDR; // word address
+				else result[0] = opTypes.BADDR;
 				result[2] = 0xffffffff;
 				result[3] = j; //record the label id for the detected label.
 				//var newRow = new Array(i, );
@@ -518,31 +668,3 @@ function parseOperand(operand, isWord)
 
 	return result;
 }
-
-// Check that this operand is a valid source operand.
-function parseCheckValidSource(op)
-{
-	// is it a number
-	// is it a register
-	// is it a pointer to register
-	// is it a memory pointer
-	// is it a variable pointer
-	// error
-}
-
-// Check that this operand is a valid target operand.
-function parseCheckValidTarget(op)
-{
-	// is it a register
-	// is it a pointer to register
-	// is it a memory pointer
-	// is it a variable pointer
-	// error
-}
-
-// operand info
-//	can modify
-//	8bit or 16 bit required
-// is it a literal
-// is it a label
-// register? address?

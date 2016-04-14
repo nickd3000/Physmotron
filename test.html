@@ -23,31 +23,14 @@
 	<canvas id="canvas" width="256" height="256" tabindex="1"></canvas>
 
 	<textarea id="source" spellcheck="false" autofocus="true" rows="20" cols="65" wrap="off">
-// Comments can start with // or ;
-//
-mov r1,5      // Move number 5 into register 1
-mov r2,var1   // Move address of var1 into r2
-mov r3,[var2] // Move byte at address var2 into r3
 
-pua           // Push r1,r2 and r3 on to stack
-call label    // Jump to label (stack contains return location)
-poa           // Pop r1,r2,r3 back from stack
+//add [var1],1
+mov r1, [var1]
 
-brk           // Stop execution
+brk
 
-label:        // A label we can jump to
-	mov [2048], 48  // Put a '0' character to screen text memory
-	mov [503], 14   // Change background colour to light blue
-	ret             // return from 'function'
-
-ret      // return from jump - only use it after a cal
-
-
-// Please put data declarations at end of source for now.
-var1: db 0x12  ; Declare a byte containing hex value 0x12
-var2: db 42    ; Declare a byte containing 12
-
-// END of example program.
+val1: db 4,2,10,22
+val2: db 5
 	</textarea>
 
 <textarea id="output" spellcheck="false" autofocus="true" rows="10" cols="65" wrap="off">

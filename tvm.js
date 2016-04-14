@@ -5,6 +5,7 @@
 var memSize = 1024*1024; // 1048576
 var mem = new Uint8Array(memSize);
 // Registers
+var hw_regs = [0,0,0,0,0,0,0,0,0,0,0];
 var hw_r1 = 0;
 var hw_r2 = 0;
 var hw_r3 = 0;
@@ -66,6 +67,7 @@ function loadBytecode(bc, addr) {
 
 function resetMachine() {
 	for (var m=0;m<memSize;m++) mem[m]=0|0;
+	for (var n=0;n<hw_regs.length;n++) hw_regs[n]=0|0;
 	_loadFont(hw_fontLocation);
 	hw_r1 = 0;
 	hw_r2 = 0;
@@ -75,6 +77,10 @@ function resetMachine() {
 	hw_sp = hw_stackTop;
 	hw_flags = 0;
 	storeWord(hw_screenOffset, hw_screenPixelLocation);
+
+	// Setup some debug values in memory locations.
+	//storeByte(50,123);
+	//storeWord(60,1024);
 }
 
 function main() {
@@ -88,9 +94,11 @@ function main() {
 	mem[hw_screenTextLocation+3]=107;
 	for (var n=hw_screenTextLocation;n<hw_screenTextLocation+250;n++) mem[n]=32+(n%128);
 
+	var runWithDisplay = true;
+
+
 	loadBytecode(compile(getSampleAssemblerCode(11)),hw_programDataStart);
 
-	var runWithDisplay = true;
 
 	// Debug mode.
 	if (runWithDisplay===false) {
@@ -156,26 +164,48 @@ function tick()
 		console.log("VM ERROR: Instruction not found at byte " + hw_pc);
 		setFlag(break_flag,1);
 		var trap = 1;
+		debugger;
 	}
 
+	//
+
+	/*
 	var iID = imap[mapI][0];
-	var iType = imap[mapI][1];
+	var iType = imap[mapI][0];
 	var iOp1 = imap[mapI][2];
 	var iOp2 = imap[mapI][3];
+	*/
+	var numOps = imapNew[mapI][1];
+	var iOp1 = null, iOp2 = null;
 	var val1=0|0;
+
+	// Read  one or two operator descriptors if instruction allows.
+	if (numOps>0) iOp1 = mem[hw_pc++];
+	if (numOps>1) iOp2 = mem[hw_pc++];
+
 	//console.log("found:" + mapI + ", iID:" + iID + ", iType:" + iType + ", iOp1:" + iOp1 + ", iOp2:"+ iOp2 + "");
 
-	switch(iType) {
+	// Read any extra data for operator.
+	var ed1=0|0,ed2=0|0;
+
+
+	var decoded1 = decodeOperator(iOp1);
+	var decoded2 = decodeOperator(iOp2);
+
+	if (iOp1!==null) ed1 = readExtraData(decoded1[0]);
+	if (iOp2!==null) ed2 = readExtraData(decoded2[0]);
+
+	switch(instr) {
 
 		case itype.MOV:
 			var addr1=null, addr2=null;
-			if (iOp1===op.AB) addr1=getSource(op.WO); // Pointers are always words.
-			if (iOp1===op.AW) addr1=getSource(op.WO);
-			if (iOp2===op.AB) addr2=getSource(op.WO);
-			if (iOp2===op.AW) addr2=getSource(op.WO);
-			var srcVal = getSource(iOp2,addr2);
+			//if (iOp1===op.AB) addr1=getSource(op.WO); // Pointers are always words.
+			//if (iOp1===op.AW) addr1=getSource(op.WO);
+			//if (iOp2===op.AB) addr2=getSource(op.WO);
+			//if (iOp2===op.AW) addr2=getSource(op.WO);
+			var srcVal = getSource(iOp2,ed2);
 
-			setTarget(iOp1,srcVal,addr1);
+			setTarget(iOp1,srcVal,ed1);
 			/*
 			if (iOp2===op.AR1B || iOp2===op.AR2B || iOp2===op.AR3B) {
 				 //addr=getSource(op.WO);
@@ -190,69 +220,99 @@ function tick()
 			}*/
 
 		break;
+
+		case itype.ADD:
+		 	setTarget(iOp1,(getSource(iOp1,ed1)+getSource(iOp2,ed2))&0xffffffff,ed1);
+		break;
+		case itype.SUB:
+		 	setTarget(iOp1,(getSource(iOp1,ed1)-getSource(iOp2,ed2))&0xffffffff,ed1);
+		break;
+		case itype.MUL:
+		 	setTarget(iOp1,(getSource(iOp1,ed1)*getSource(iOp2,ed2))&0xffffffff,ed1);
+		break;
+		case itype.DIV:
+		 	setTarget(iOp1,((getSource(iOp1,ed1)/getSource(iOp2,ed2))|0)&0xffffffff,ed1);
+		break;
+
+		case itype.JMP:
+			//hw_pc = getSource(op.WO);
+			hw_pc = ed1; //getSource(iOp1,ed1);
+		break;
+
 		case itype.CMP:
-			if (iOp1===op.AB) addr1=getSource(op.WO); // Pointers are always words.
-			if (iOp1===op.AW) addr1=getSource(op.WO);
-			if (iOp2===op.AB) addr2=getSource(op.WO);
-			if (iOp2===op.AW) addr2=getSource(op.WO);
-			var result = getSource(iOp1,addr1) - getSource(iOp2,addr2);
+			var result = getSource(iOp1,ed1) - getSource(iOp2,ed2);
 			setFlag(zero_flag,0);
 			setFlag(sign_flag,0);
 			if (result===0) setFlag(zero_flag,1);
 			else if (result<0) setFlag(sign_flag,1);
 			else setFlag(sign_flag,0);
 			break;
-		case itype.INC: setTarget(iOp1, getSource(iOp1)+1, null);	break;
+		case itype.INC: setTarget(iOp1, getSource(iOp1,ed1) + 1);	break;
 		case itype.DEC: setTarget(iOp1, getSource(iOp1)-1, null);	break;
-		case itype.JMP:
-			hw_pc = getSource(op.WO);
-			break;
+
 		case itype.JE:
-			if (getFlag(zero_flag)) hw_pc = getSource(op.WO);
-			else hw_pc+=4; // skip word.
+			if (getFlag(zero_flag)) hw_pc = ed1;
+
 			break;
 		case itype.JNE:
-			if (getFlag(zero_flag)===0) hw_pc = getSource(op.WO);
-			else hw_pc+=4; // skip word.
+			if (getFlag(zero_flag)===0) hw_pc = ed1;
+
 			break;
 		case itype.JL:
-			if (getFlag(sign_flag)>0) hw_pc = getSource(op.WO);
-			else hw_pc+=4; // skip word.
+			if (getFlag(sign_flag)>0) hw_pc = ed1;
+
 			break;
 		case itype.JLE:
-			if (getFlag(sign_flag)>0 || getFlag(zero_flag)) hw_pc = getSource(op.WO);
-			else hw_pc+=4; // skip word.
+			if (getFlag(sign_flag)>0 || getFlag(zero_flag)) hw_pc = ed1;
+
 			break;
 		case itype.JG:
-			if (getFlag(sign_flag)===0) hw_pc = getSource(op.WO);
-			else hw_pc+=4; // skip word.
+			if (getFlag(sign_flag)===0 && getFlag(zero_flag)===0) hw_pc = ed1;
+
 			break;
 		case itype.JGE:
-			if (getFlag(sign_flag)===0 || getFlag(zero_flag)) hw_pc = getSource(op.WO);
-			else hw_pc+=4; // skip word.
+			if (getFlag(sign_flag)===0 || getFlag(zero_flag)) hw_pc = ed1;
+
 			break;
-		case itype.PUB: pushByte(getSource(iOp1)); break;
-		case itype.PUW: pushWord(getSource(iOp1)); break;
+		case itype.PUB: pushByte(getSource(iOp1,ed1)); break;
+		case itype.PUW: pushWord(getSource(iOp1,ed1)); break;
 		case itype.POB: setTarget(iOp1,popByte()); break;
 		case itype.POW: setTarget(iOp1,popWord()); break;
-		case itype.ADD: setTarget(iOp1,(getSource(iOp1)+getSource(iOp2))&0xffffffff); break;
+
 		case itype.SUB: setTarget(iOp1,(getSource(iOp1)-getSource(iOp2))&0xffffffff); break;
-		case itype.SYS: sysCall(getSource(iOp1)); break;
-		case itype.CAL: pushWord(hw_pc+4); hw_pc = getSource(op.WO); break;
+		case itype.SYS: sysCall(getSource(iOp1,ed1)); break;
+		case itype.CAL: pushWord(hw_pc+4); hw_pc = getSource(iOp1,ed1); break;
 		case itype.RET: hw_pc=popWord(); break;
 		case itype.BRK: setFlag(break_flag,1); break;
-		case itype.AND: setTarget(iOp1,(getSource(iOp1)&getSource(iOp2))&0xffffffff); break;
+
+		case itype.AND: setTarget(iOp1,(getSource(iOp1,ed1)&getSource(iOp2,ed2))&0xffffffff); break;
+		case itype.OR: setTarget(iOp1,(getSource(iOp1,ed1)|getSource(iOp2,ed2))&0xffffffff); break;
+		case itype.XOR: setTarget(iOp1,(getSource(iOp1,ed1)^getSource(iOp2,ed2))&0xffffffff); break;
+		case itype.NOT: setTarget(iOp1,(~getSource(iOp1,ed1))&0xffffffff); break;
+		case itype.TEST:
+			var result = getSource(iOp1,ed1) & getSource(iOp2,ed2);
+			setFlag(zero_flag,0);
+			setFlag(sign_flag,0);
+			if (result===0) setFlag(zero_flag,1);
+			else if (result<0) setFlag(sign_flag,1);
+			else setFlag(sign_flag,0);
+		 break;
+
+
 		case itype.PUA: pushAll(); break;
 		case itype.POA: popAll(); break;
 		case itype.SHL:
-			val1  = getSource(iOp1);
+			//setTarget(iOp1,(getSource(iOp1,ed1)+getSource(iOp2,ed2))&0xffffffff);
+			val1  = getSource(iOp1,ed1);
+			var amount = getSource(iOp2,ed2);
 			if (0x80000000&val1>0) setFlag(carry_flag,1);
-			setTarget(iOp1, (val1<<1)&0xffffffff);
+			setTarget(iOp1, (val1<<amount)&0xffffffff, ed1);
 			break;
 		case itype.SHR:
 			val1  = getSource(iOp1);
+			var amount = getSource(iOp2,ed2);
 			if (0x00000001&val1>0) setFlag(carry_flag,1);
-			setTarget(iOp1, (val1>>1)&0xffffffff);
+			setTarget(iOp1, (val1>>amount)&0xffffffff);
 			break;
 		case itype.CLC: setFlag(carry_flag,0); break;
 		case itype.CLZ: setFlag(zero_flag,0); break;
@@ -262,6 +322,26 @@ function tick()
 	}
 }
 
+// Pass in an operator descriptor, this function reads any other data required
+// by the operator.
+function readExtraData(opType)
+{
+	var read = 0|0;
+	// next byte literal
+	if (opType==opTypes.BLIT) {
+		read = mem[hw_pc++]|0;
+	}
+	if (opType==opTypes.WLIT) {
+		read = getNextWord();
+	}
+	if (opType==opTypes.BADDR) {
+		read = getNextWord();
+	}
+	if (opType==opTypes.WADDR) {
+		read = getNextWord();
+	}
+	return read;
+}
 
 function pushAll()
 {
@@ -292,9 +372,11 @@ function processMiscInstruction(instr) {
 
 }
 
+
 function findInstructionInMap (pInst) {
 	return instructionQuickLookup[pInst];
 }
+
 
 
 // Set a bit (using the flag bit mask) in hw_flags to value (0|1)
@@ -350,7 +432,7 @@ function popWord()
 function displayRegisters()
 {
 	var outHW = "PC:" + hw_pc + " \tSP:" + hw_sp + "\n";
-	var outRegs =  "R1:" + hw_r1 + " \tR2:" + hw_r2  + " \tR3:" + hw_r3 + "\n";
+	var outRegs =  "R1:" + hw_regs[0] + " \tR2:" + hw_regs[1]  + " \tR3:" + hw_regs[2] + " \tR4:" + hw_regs[3] + "\n";
 	var outStack = "ST:";//+mem[hw_sp+1]+","+mem[hw_sp+2]+","+mem[hw_sp+3]+","+mem[hw_sp+4];
 	for (var s=0;s<16;s++) outStack = outStack + " ,"+mem[hw_sp+s];
 	console.log(outHW + outRegs + outStack);
@@ -371,6 +453,7 @@ function dumpMemory()
 	}
 }
 
+// Read a word using PC as position, increase PC by 4
 function getNextWord()
 {
 	//var total = mem[hw_pc++];
@@ -378,20 +461,45 @@ function getNextWord()
 	//total+= mem[hw_pc++];
 	//return total;
 
-	var byte1 = mem[hw_sp++];
-	var byte2 = mem[hw_sp++];
-	var byte3 = mem[hw_sp++];
-	var byte4 = mem[hw_sp++];
+	var byte1 = mem[hw_pc++];
+	var byte2 = mem[hw_pc++];
+	var byte3 = mem[hw_pc++];
+	var byte4 = mem[hw_pc++];
 
-	return ((byte1<<24)&0xff)+((byte2<<16)&0xff)+((byte3<<8)&0xff)+(byte4&0xff);
+	return ((byte1<<24))+((byte2<<16))+((byte3<<8))+(byte4);
 }
 
 
 
 // parametrised function to set a value at given target.
-function setTarget (trg, val, addr)
+function setTarget (op, val, addr)
 {
 	"use strict";
+
+	var decoded = decodeOperator(op);
+	var regId = decoded[1];
+	switch (decoded[0]) {
+		case opTypes.REG:
+			hw_regs[regId] = val;
+		break;
+		case opTypes.BAREG:
+			storeByte(hw_regs[regId], val&0xff);
+		break;
+		case opTypes.WAREG:
+			storeWord(hw_regs[regId], val&0xffffffff);
+		break;
+		case opTypes.BADDR:
+			storeByte(addr, val&0xff);
+		break;
+		case opTypes.WADDR:
+			storeWord(addr, val&0xffffffff);
+		break;
+		case opTypes.PC: hw_pc = val; break;
+		case opTypes.FLAGS: hw_flags = val; break;
+		case opTypes.SP: hw_sp = val; break;
+	}
+
+	/*
 	switch (trg) {
 		case op.R1:	hw_r1 = val;	break;
 		case op.R2:	hw_r2 = val;	break;
@@ -411,13 +519,42 @@ function setTarget (trg, val, addr)
 		case op.AW:	storeWord(addr,val); break;
 		//case TBY:	 break;	// TODO: throw an error if we try to write to a constant.
 		//case TWO:	 break;
-	}
+	}*/
 }
 
 
 // parametrised function to get a value at given target.
-function getSource(src,addr)
+function getSource(op,val)
 {
+	var decoded = decodeOperator(op);
+	var regId = decoded[1];
+	switch (decoded[0]) {
+		case opTypes.REG:
+			return hw_regs[regId];
+		//break;
+		case opTypes.BAREG:
+			return getByte(hw_regs[regId]);
+		//break;
+		case opTypes.WAREG:
+			return getWord(hw_regs[regId]);
+		//break;
+		case opTypes.BLIT: return val; //break;	// Byte literal
+		case opTypes.WLIT: return val; //break;	// Word literal
+
+		case opTypes.BADDR: return getByte(val); //break;	// Byte literal
+		case opTypes.WADDR: return getWord(val); //break;	// Word literal
+
+		case opTypes.PC: return hw_pc; //break;
+		case opTypes.FLAGS: return hw_flags; //break;
+		case opTypes.SP: return hw_sp; //break;
+	}
+
+
+	//if (src===40) {
+//		return val;
+//	}
+
+	/*
 	switch (src) {
 		case op.R1: return hw_r1;
 		case op.R2: return hw_r2;
@@ -432,7 +569,7 @@ function getSource(src,addr)
 		case op.AR1W: return (mem[hw_r1]<<24)+(mem[hw_r1+1]<<16)+(mem[hw_r1+2]<<8)+mem[hw_r1+3];
 		case op.AR2W: return (mem[hw_r2]<<24)+(mem[hw_r2+1]<<16)+(mem[hw_r2+2]<<8)+mem[hw_r2+3];
 		case op.AR3W: return (mem[hw_r3]<<24)+(mem[hw_r3+1]<<16)+(mem[hw_r3+2]<<8)+mem[hw_r3+3];
-	}
+	}*/
 }
 
 // Store a byte in memory.
