@@ -6,9 +6,9 @@ var memSize = 1024*1024; // 1048576
 var mem = new Uint8Array(memSize);
 // Registers
 var hw_regs = [0,0,0,0,0,0,0,0,0,0,0];
-var hw_r1 = 0;
-var hw_r2 = 0;
-var hw_r3 = 0;
+//var hw_r1 = 0;
+//var hw_r2 = 0;
+//var hw_r3 = 0;
 var hw_pc = 0;
 var hw_stackTop = 1280; // size = 0xff;
 var hw_sp = hw_stackTop;
@@ -69,9 +69,7 @@ function resetMachine() {
 	for (var m=0;m<memSize;m++) mem[m]=0|0;
 	for (var n=0;n<hw_regs.length;n++) hw_regs[n]=0|0;
 	_loadFont(hw_fontLocation);
-	hw_r1 = 0;
-	hw_r2 = 0;
-	hw_r3 = 0;
+
 	hw_pc = hw_programDataStart;
 	hw_stackTop = memSize-0xff;
 	hw_sp = hw_stackTop;

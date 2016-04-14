@@ -186,3 +186,13 @@ var instructionQuickLookup = [];
 for (var ql = 0; ql<imapNew.length;ql++) {
 	instructionQuickLookup[imapNew[ql][0]]=ql;
 }
+
+// Packed opcode literals.
+var packedLiterals = [
+0,1,2,3,4,5,6,7,8,9,10,
+20,30,40,50,60,70,80,90,100,
+16,32,64,128,255,
+];
+
+
+// 1,60,106,0,2,256,0xa,0x9,7,16,0,6,7,0xf,32,1024,0xff00,0x1000

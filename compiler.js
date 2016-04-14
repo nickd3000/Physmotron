@@ -602,9 +602,11 @@ function parseOperand(operand, isWord)
 		if (labelList[i][0]==operand) {
 			//console.log("LABEL USE FOUND!! " + operand);
 
-			if (isWord===true) result[0] = opTypes.WADDR;
-			else result[0] = opTypes.BADDR;
-			//result[0] = op.WO;
+			//if (isWord===true) result[0] = opTypes.WADDR;
+			//else result[0] = opTypes.BADDR;
+			// test:
+			result[0] = opTypes.WLIT;
+			//else result[0] = opTypes.BADDR;
 
 			result[2] = 0xffffffff;
 			result[3] = i; //record the label id for the detected label.
