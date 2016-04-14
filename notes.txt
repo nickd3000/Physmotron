@@ -11,7 +11,8 @@ mov word r2,word [r1] -- doesnt work
 mov word r1,word [r1] -- compiles but no effect
 
 
-
+[*] Made a major change to the way the virtual machine is structured.
+==
 [*] fixed move word from register to memory. Ex:
 	mov r1, word 512
 	mov word [10], word r1
