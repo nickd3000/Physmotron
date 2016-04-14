@@ -27,6 +27,7 @@ var opTypes = {
 // Instruction types.
 // These actually represent the new OPCODES
 var itype = {
+	NOP: 0,
 	MOV: 1,
 
 	// Compare and Jumps
@@ -125,6 +126,7 @@ var instNames = [
 
 // table of valid opcodes, and how many operands it takes
 var imapNew = [
+	[itype.NOP, 0],
 	[itype.MOV, 2],
 
 	// Compare and jumps

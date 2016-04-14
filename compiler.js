@@ -1,16 +1,5 @@
 
 
-var OP_UNKNOWN = 0;
-var OP_R1 = 1;
-var OP_R2 = 2;
-var OP_R3 = 3;
-var OP_AR1 = 4; // R1 Address
-var OP_AR2 = 5;
-var OP_AR3 = 6;
-var OP_NUM = 7;
-var OP_ANUM = 8;
-
-
 // Short answer describing 6502 use of labels.
 // http://forum.6502.org/viewtopic.php?t=945
 // Binary relocation proposal in 6502
@@ -49,20 +38,6 @@ function compile(source)
 	labelList = [];
 	labelUsedList = [];
 	compileOutput = "";
-
-/*
-	var source = "";
-	//source += 'mov 0xff, [123] \n';
-	source += 'mov	r3,0xff \n';
-	source += "CMP	r1, 257 \n";
-	source += "inc r1 \n";
-	source += "pushb r3 \n";
-	source += "pushw r3 \n";
-	source += "popb r3 \n";
-	source += "pushb 0xff \n";
-	source += "goto 10 \n";
-	//source += "jmp 1 ";
-*/
 
 	// Convert tabs to space.
 	source = source.replace(/\t+/g, " ");
@@ -508,6 +483,7 @@ function generateBytecodeLine(opcode, op1, op2, curCodeLength)
 	return outputCode; */
 }
 
+/*
 function findInstruction(iType, op1, op2)
 {
 	var matchType = false;
@@ -533,28 +509,21 @@ function findInstruction(iType, op1, op2)
 
 		return imap[i][0];
 
-		/*
-		{
-
-			if (op1!=null && imap[i][2]==op1[0]){
-				if (imap[i][3]==op2[0]){
-					return imap[i][0];
-				}
-			} else
-		}*/
 	}
 
 	console.log("No Matching instruction found." + " iType:" + iType + " op1:" + op1 + " op2:" + op2);
 	return -1;
 }
+*/
+
 
 // are there two operands?
 // are operands a valid source and target?
-function parseCheckMov(line, lineNumber)
+/*function parseCheckMov(line, lineNumber)
 {
 	if (line.length<2) return 1;
 
-}
+}*/
 
 
 // r1 [r1] 12 0xff label

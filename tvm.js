@@ -155,8 +155,12 @@ function tick()
 
 	if (getFlag(break_flag)>0) return;
 
+
+
 	var instr = mem[hw_pc++];
 	var mapI = findInstructionInMap(instr);
+
+	//console.log("Trace: PC:" + hw_pc + "   instr:" + instr  + "   mapI:" + mapI);
 
 	if (mapI===null) return;
 
@@ -167,14 +171,7 @@ function tick()
 		debugger;
 	}
 
-	//
 
-	/*
-	var iID = imap[mapI][0];
-	var iType = imap[mapI][0];
-	var iOp1 = imap[mapI][2];
-	var iOp2 = imap[mapI][3];
-	*/
 	var numOps = imapNew[mapI][1];
 	var iOp1 = null, iOp2 = null;
 	var val1=0|0;
@@ -281,8 +278,15 @@ function tick()
 
 		case itype.SUB: setTarget(iOp1,(getSource(iOp1)-getSource(iOp2))&0xffffffff); break;
 		case itype.SYS: sysCall(getSource(iOp1,ed1)); break;
-		case itype.CAL: pushWord(hw_pc+4); hw_pc = getSource(iOp1,ed1); break;
-		case itype.RET: hw_pc=popWord(); break;
+		//case itype.CAL: pushWord(hw_pc+4); hw_pc = getSource(iOp1,ed1); break;
+		case itype.CAL:
+			pushWord(hw_pc); hw_pc = ed1;
+
+			break;
+		case itype.RET:
+		 	hw_pc=popWord();
+
+			break;
 		case itype.BRK: setFlag(break_flag,1); break;
 
 		case itype.AND: setTarget(iOp1,(getSource(iOp1,ed1)&getSource(iOp2,ed2))&0xffffffff); break;
@@ -345,16 +349,27 @@ function readExtraData(opType)
 
 function pushAll()
 {
-	pushWord(hw_r1);
-	pushWord(hw_r2);
-	pushWord(hw_r3);
+	pushWord(mem[hw_regs]);
+	pushWord(mem[hw_regs+1]);
+	pushWord(mem[hw_regs+2]);
+	pushWord(mem[hw_regs+3]);
+	pushWord(mem[hw_regs+4]);
+	pushWord(mem[hw_regs+5]);
+	pushWord(mem[hw_regs+6]);
+	pushWord(mem[hw_regs+7]);
+
 }
 
 function popAll()
 {
-	hw_r3 = popWord();
-	hw_r2 = popWord();
-	hw_r1 = popWord();
+	mem[hw_regs+7] = popWord();
+	mem[hw_regs+6] = popWord();
+	mem[hw_regs+5] = popWord();
+	mem[hw_regs+4] = popWord();
+	mem[hw_regs+3] = popWord();
+	mem[hw_regs+2] = popWord();
+	mem[hw_regs+1] = popWord();
+	mem[hw_regs] = popWord();
 }
 
 
@@ -388,7 +403,7 @@ function setFlag(flag, value)
 
 function getFlag(flag)
 {
-	return (hw_flags&flag)>0?1:0;
+	return (hw_flags&flag)>0?(1|0):(0|0);
 }
 
 // Stack operations.
@@ -419,10 +434,10 @@ function popByte()
 
 function popWord()
 {
-	var byte4 = popByte();
-	var byte3 = popByte();
-	var byte2 = popByte();
-	var byte1 = popByte();
+	var byte4 = popByte()&0xff;
+	var byte3 = popByte()&0xff;
+	var byte2 = popByte()&0xff;
+	var byte1 = popByte()&0xff;
 
 	return (byte1<<24)+(byte2<<16)+(byte3<<8)+byte4;
 }
