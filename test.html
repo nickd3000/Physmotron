@@ -37,7 +37,7 @@
 <body onload="main()">
 
 	<table border="1" style="width:100%">
-		<tr height="200px" width="200px">
+		<tr height="70%" width="200px">
 			<td style="width:200; float:left" bgcolor="#2F2F5F">
 				<canvas id="canvas" width="256" height="256" tabindex="1"></canvas>
 			</td>
@@ -66,14 +66,13 @@ val2: db 5
 
 
 
-
-
-
-
-
-
 	<button onclick="webCompile()">Compile</button>
 	<button onclick="webShowRegs()">Get Registers</button>
+	<button onclick="webStep()">Step</button>
+	
+	<input type="checkbox" id="step" name="step" value="step" onclick="webStepCheckbox()">Step mode
+	
+	
 <div id="fps">fps</div>
 
 </body>

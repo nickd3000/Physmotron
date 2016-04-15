@@ -55,12 +55,13 @@ var break_flag = 1<<2;
 var carry_flag = 1<<3;
 
 var stopAnimation = false;
+var steppingMode = false;
 
 // Load bytecode from an int array to a memory location.
 function loadBytecode(bc, addr) {
 	//console.log("BC: "+bc);
 	for (var i=0;i<bc.length;i++) {
-		mem[i+addr] = bc[i];
+		mem[i+addr] = bc[i]|0;
 		//console.log("Load:"+bc[i]);
 	}
 }
@@ -132,7 +133,7 @@ function draw() {
 		document.getElementById("fps").textContent = ((fps|0)+" fps");
 	}
 
-	requestAnimationFrame(draw);
+	if (steppingMode===false) requestAnimationFrame(draw);
 
 
 	for (var j=0;j<0xff;j++) {
@@ -390,7 +391,10 @@ function findInstructionInMap (pInst) {
 	return instructionQuickLookup[pInst];
 }
 
-
+function setSteppingMode(to)
+{
+	steppingMode = to;
+}
 
 // Set a bit (using the flag bit mask) in hw_flags to value (0|1)
 function setFlag(flag, value)
@@ -440,11 +444,17 @@ function popWord()
 	return (byte1<<24)+(byte2<<16)+(byte3<<8)+byte4;
 }
 
-
+function toHex(val, charLength)
+{
+	var hexStr = val.toString(16);
+	while (hexStr.length<charLength) hexStr = "0"+hexStr;
+	hexStr = "0x"+hexStr;
+	return hexStr; 
+}
 
 function displayRegisters()
 {
-	var outHW = "PC:" + hw_pc + " \tSP:" + hw_sp + "\n";
+	var outHW = "PC:" + toHex(hw_pc,8) + " \tSP:" + toHex(hw_sp,8) + "\n";
 	var outRegs =  "R1:" + hw_regs[0] + " \tR2:" + hw_regs[1]  + " \tR3:" + hw_regs[2] + " \tR4:" + hw_regs[3] + "\n";
 	var outStack = "ST:";//+mem[hw_sp+1]+","+mem[hw_sp+2]+","+mem[hw_sp+3]+","+mem[hw_sp+4];
 	for (var s=0;s<16;s++) outStack = outStack + " ,"+mem[hw_sp+s];
@@ -595,16 +605,16 @@ function storeByte(addr, val)
 // Store a word in memory.
 function storeWord(addr, val)
 {
-	mem[addr] = (val>>24)&0xff;
-	mem[addr+1] = (val>>16)&0xff;
-	mem[addr+2] = (val>>8)&0xff;
-	mem[addr+3] = (val)&0xff;
+	mem[addr] = ((val>>24)&0xff)|0;
+	mem[addr+1] = ((val>>16)&0xff)|0;
+	mem[addr+2] = ((val>>8)&0xff)|0;
+	mem[addr+3] = ((val)&0xff)|0;
 }
 
 // Get a byte from memory.
 function getByte(addr)
 {
-	return mem[addr];
+	return mem[addr]|0;
 }
 
 // Get a word from memory.

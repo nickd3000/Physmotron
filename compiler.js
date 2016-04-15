@@ -172,7 +172,7 @@ function compile(source)
 
 		var outp = "s[" + line + "]";
 		outp = padString(outp,6);
-		outp = outp + "b[" + (sourceToCodeMap[line][0]+hw_programDataStart).toString(16) + "]";
+		outp = outp + "b[" + toHex((sourceToCodeMap[line][0]+hw_programDataStart),8) + "]";
 		outp = padString(outp,12);
 		outp+=byteLine;
 		outp = padString(outp,45);

@@ -17,6 +17,8 @@ function webCompile()
 
 	document.getElementById("canvas").focus();
 	//requestAnimationFrame(draw);
+	
+	webShowRegs();
 }
 
 
@@ -25,4 +27,23 @@ function webShowRegs()
 	var strDisplayRegisters = displayRegisters();
 	//strDisplayRegisters = strDisplayRegisters.replace(new RegExp('\n','g'), '<br />');
 	document.getElementById("regs").value = strDisplayRegisters;
+}
+
+function webStep() {
+	tick();
+	redrawScreen(1);
+	webShowRegs();
+}
+
+function webStepCheckbox() {
+	
+	var checkedValue = document.getElementById("step").checked;
+	if (checkedValue==false) {
+		//console.log("false");
+		
+	} else {
+		//console.log("true");
+		setSteppingMode(true);
+	}
+	
 }
