@@ -348,27 +348,27 @@ function readExtraData(opType)
 
 function pushAll()
 {
-	pushWord(mem[hw_regs]);
-	pushWord(mem[hw_regs+1]);
-	pushWord(mem[hw_regs+2]);
-	pushWord(mem[hw_regs+3]);
-	pushWord(mem[hw_regs+4]);
-	pushWord(mem[hw_regs+5]);
-	pushWord(mem[hw_regs+6]);
-	pushWord(mem[hw_regs+7]);
+	pushWord(hw_regs[0]);
+	pushWord(hw_regs[1]);
+	pushWord(hw_regs[2]);
+	pushWord(hw_regs[3]);
+	pushWord(hw_regs[4]);
+	pushWord(hw_regs[5]);
+	pushWord(hw_regs[6]);
+	pushWord(hw_regs[7]);
 
 }
 
 function popAll()
 {
-	mem[hw_regs+7] = popWord();
-	mem[hw_regs+6] = popWord();
-	mem[hw_regs+5] = popWord();
-	mem[hw_regs+4] = popWord();
-	mem[hw_regs+3] = popWord();
-	mem[hw_regs+2] = popWord();
-	mem[hw_regs+1] = popWord();
-	mem[hw_regs] = popWord();
+	hw_regs[7] = popWord();
+	hw_regs[6] = popWord();
+	hw_regs[5] = popWord();
+	hw_regs[4] = popWord();
+	hw_regs[3] = popWord();
+	hw_regs[2] = popWord();
+	hw_regs[1] = popWord();
+	hw_regs[0] = popWord();
 }
 
 
