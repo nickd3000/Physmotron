@@ -141,9 +141,6 @@ function renderScanlineGraphicsMode()
 
 
 
-
-
-
 function redrawTextMode(){
 	//ctx.font = "9px monospace";
 	//ctx.fillStyle="white";

@@ -11,6 +11,10 @@ mov word r2,word [r1] -- doesnt work
 mov word r1,word [r1] -- compiles but no effect
 
 
+[*] compiler check for unrecognised instructions
+[*] compiler check number of operands
+[ ] add declare word
+==
 [*] Made a major change to the way the virtual machine is structured.
 ==
 [*] fixed move word from register to memory. Ex:
@@ -142,3 +146,13 @@ mov [221112],byte 1
 mov [221112],word 1
 push word 32
 push byte 13
+
+
+Optimisation:
+Heavy functions:
+	findInstructionInMap - no scope to optimise?
+	decodeOperator		3.234s
+	getFlag
+	getWord
+	storeByte
+	StoreWord

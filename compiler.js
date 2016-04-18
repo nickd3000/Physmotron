@@ -56,20 +56,17 @@ function compile(source)
 	{
 		sourceToCodeMap[line]=[null,null];
 
-
 		registerCurrentLineWithLabels(line, byteCode.length);
 
 		if (lines[line]==="") continue;
 
 		var strLine = stripCommentFromLine(lines[line]);
-
 		var tokens = strLine.trim().split(/[ ,/\t]+/); // (/[ ,/t]+/)
 		var tokenCount = tokens.length;
 		//console.log("Line:"+line+" Tokens:"+tokenCount);
 
 		// Debug: print each token in line.
 		//for (var j=0;j<tokenCount;j++) console.log("Token:" + tokens[j]);
-
 
 		// We may have consumed a label or comment statement which resulted in a blank line.
 		if (tokens[0]==="") continue; // So skip empty lines.
@@ -79,9 +76,11 @@ function compile(source)
 			compiledLine = declareBytes(lines[line]);
 
 			// Copied this from down below, should probs make it a function.
-			for (var j=0;j<compiledLine.length;j++) {
-				byteCode[byteCode.length]=compiledLine[j]|0;
-			}
+			//for (var j=0;j<compiledLine.length;j++) {
+			//	byteCode[byteCode.length]=compiledLine[j]|0;
+			//}
+			copyBytesToByteCode(byteCode, compiledLine);
+			
 			continue;
 		}
 
@@ -104,7 +103,8 @@ function compile(source)
 				  op1 = parseOperand(tokens[ti], isWord);
 				  isWord=false;
 			  }
-			 else {  op2 = parseOperand(tokens[ti], isWord);
+			 else {  
+				 op2 = parseOperand(tokens[ti], isWord);
 				 isWord = false;
 			 }
 		}
@@ -122,14 +122,21 @@ function compile(source)
 		// Search for opcode using instruction type and operand types.
 		//oc = findInstruction(itp, op1, op2);
 
-/*
-		if (oc===-1) {
+		
+		// Detect error, unrecognised opcode.
+		if (itp===-1) {
 			console.log("COMPILE ERROR: Opcode not recognised at line " + line);
 			console.log("  > " + lines[line]);
-			compileOutput = compileOutput + "COMPILE ERROR: at line " + line + "\n";
+			compileOutput = compileOutput + "COMPILE ERROR: Instruction not recognised at line " + line + "\n";
 			compileOutput = compileOutput + "  > " + lines[line] + "\n";
+		} else  { // Error - wrong number of operands
+			
+			var numExpOperands = imapNew[instructionQuickLookup[itp]][1];
+			if ((numExpOperands==2 && op2===null) || (numExpOperands==1 && op1===null)) {
+				compileOutput = compileOutput + "COMPILE ERROR: Expected " + numExpOperands + " operands at " + line + "\n";
+				compileOutput = compileOutput + "  > " + lines[line] + " \n";
+			}
 		}
-*/
 
 		//compiledLine = generateBytecodeLine(oc,op1,op2,byteCode.length);
 		compiledLine = generateBytecodeLineNew(itp,op1,op2,byteCode.length);
@@ -137,9 +144,12 @@ function compile(source)
 		//byteCode += compiledLine;
 		// Add compiled line to bytecode.
 		sourceToCodeMap[line]=[byteCode.length, compiledLine.length];
-		for (var j=0;j<compiledLine.length;j++) {
-			byteCode[byteCode.length]=compiledLine[j]|0;
-		}
+		
+		//for (var j=0;j<compiledLine.length;j++) {
+		//	byteCode[byteCode.length]=compiledLine[j]|0;
+		//}
+		copyBytesToByteCode(byteCode, compiledLine);
+		
 		//console.log("Bytecode:" + generateBytecodeLine(oc,op1,op2));
 
 
@@ -188,6 +198,14 @@ function compile(source)
 	//console.log(tokens);
 }
 
+function copyBytesToByteCode(byteCode, barray)
+{
+	for (var i=0;i<barray.length;i++) {
+		byteCode[byteCode.length]=barray[i]|0;
+	}
+}
+		
+		
 function padString(str,size)
 {
 	while(str.length<size) str=str+" ";
@@ -313,6 +331,7 @@ function finditypeFromName(str)
 		}
 	}
 	console.log("finditypeFromName - ERROR: could not find instruction " + str);
+	return -1;
 }
 
 
@@ -391,32 +410,39 @@ function encodeOperator(opType, string, value, regId) {
 	if (regId>8) regId=8;
 	if (opType===opTypes.REG) {
 		encoded[0] = 0 + regId;
+		return encoded;
 	}
 	if (opType===opTypes.BAREG) {
 		encoded[0] = 8 + regId;
+		return encoded;
 	}
 	if (opType===opTypes.WAREG) {
 		encoded[0] = 16 + regId;
+		return encoded;
 	}
 	if (opType===opTypes.BLIT) {
 		encoded[0] = 40;
 		encoded[1] = 1; // Byte
 		encoded[2] = value;
+		return encoded;
 	}
 	if (opType===opTypes.WLIT) {
 		encoded[0] = 41;
 		encoded[1] = 2; // Word
 		encoded[2] = value;
+		return encoded;
 	}
 	if (opType===opTypes.BADDR) {
 		encoded[0] = 42;
 		encoded[1] = 3; // value is address
 		encoded[2] = value;
+		return encoded;
 	}
 	if (opType===opTypes.WADDR) {
 		encoded[0] = 43;
 		encoded[1] = 3; // value is address
 		encoded[2] = value;
+		return encoded;
 	}
 	return encoded;
 }
@@ -425,30 +451,37 @@ function decodeOperator(val)
 {
 	// format [opType, regId]
 	var decoded = [-1,-1];
-	if (val>=0 && val<=7) {
+	if (val>-1 && val<8) {
 		decoded[0] = opTypes.REG;
 		decoded[1] = val;
+		return decoded;
 	}
-	if (val>=8 && val<=15) {
+	if (val>7 && val<16) {
 		decoded[0] = opTypes.BAREG;
 		decoded[1] = val-8;
+		return decoded;
 	}
-	if (val>=16 && val<=31) {
+	if (val>15 && val<32) {
 		decoded[0] = opTypes.WAREG;
 		decoded[1] = val-16;
+		return decoded;
 	}
 
 	if (val==40) {
 		decoded[0] = opTypes.BLIT;
+		return decoded;
 	}
 	if (val==41) {
 		decoded[0] = opTypes.WLIT;
+		return decoded;
 	}
 	if (val==42) {
 		decoded[0] = opTypes.BADDR;
+		return decoded;
 	}
 	if (val==43) {
 		decoded[0] = opTypes.WADDR;
+		return decoded;
 	}
 
 	return decoded;

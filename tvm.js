@@ -85,6 +85,9 @@ function resetMachine() {
 function main() {
 	"use strict";
 
+	//timeFunction();
+	//if (1==1) return;
+
 	resetMachine();
 
 	mem[hw_screenTextLocation]=78;
@@ -120,6 +123,22 @@ function main() {
 
 }
 
+// Debug function for testing intensive function times.
+function timeFunction()
+{
+	//var fpsThisLoop = new Date();
+	//var fps = 1000 / (fpsThisLoop - fpsLastLoop);
+	var startTime = new Date();
+	for (var i=0;i<1000000;i++)
+	{
+		for (var j=0;j<100;j++)
+		{
+			decodeOperator(i&0xff);
+		}
+	}
+	var endTime = new Date();
+	console.log("FUNCTION TIMER: " + (endTime-startTime)/1000.0 + " seconds.");
+}
 
 function draw() {
 
@@ -138,13 +157,10 @@ function draw() {
 
 	for (var j=0;j<0xff;j++) {
 		// C64 can do around 20000 CPU cycles per frame.
-		for (var i=0;i<10;i++) {
+		for (var i=0;i<10000;i++) {  // 10
 			tick();
-			//displayRegisters();
 		}
-
-		//for (var sl=0;sl<10;sl++) tickDisplay();
-		redrawScreen(1);
+		redrawScreen(0xff);
 	}
 }
 
@@ -156,7 +172,7 @@ function tick()
 
 
 
-	var instr = mem[hw_pc++];
+	var instr = mem[hw_pc++]|0;
 	var mapI = findInstructionInMap(instr);
 
 	//console.log("Trace: PC:" + hw_pc + "   instr:" + instr  + "   mapI:" + mapI);

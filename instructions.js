@@ -142,7 +142,7 @@ var imapNew = [
 	[itype.JC,1],		// Jump if carry is set.
 	[itype.JCC,1],		// Jump if carry is clear.
 	[itype.CAL,1],
-	[itype.RET,1],
+	[itype.RET,0],
 
 	// Stack
 	[itype.PUB, 1],
@@ -189,10 +189,13 @@ for (var ql = 0; ql<imapNew.length;ql++) {
 }
 
 // Packed opcode literals.
+// we can have 64 different literals, they will be duplicated to include negative versions.
 var packedLiterals = [
-0,1,2,3,4,5,6,7,8,9,10,
-20,30,40,50,60,70,80,90,100,
-16,32,64,128,255,
+	0,1,2,3,4,5,6,7,8,9,10,
+	20,30,40,50,60,70,80,90,
+	100,200,300,400,500,
+	16,32,64,128,255,512,1024,2048,4096,
+	320,240
 ];
 
 
