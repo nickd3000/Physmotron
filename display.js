@@ -187,6 +187,7 @@ function renderScanlineTextMode()
 	var char=mem[hw_screenTextLocation+(row<<5)]-32;
 	var charPixels=mem[hw_fontLocation+(char<<3)+charYOffset];
 	var charCount=0;
+	var cacheColBG = mem[hw_colBG];
 	for (var x=0;x<256;x++) {
 
 		if (pixCount==8) {
@@ -200,7 +201,7 @@ function renderScanlineTextMode()
 		//x4 = x*4;
 		x4 = x<<2;
 		if((charPixels&bitPos)>0) setRowDataPixel2(x4,1); // 14
-		else setRowDataPixel2(x4,mem[hw_colBG]); // 6
+		else setRowDataPixel2(x4,cacheColBG); // 6
 
 		pixCount++;
 		bitPos=bitPos>>1;
@@ -208,7 +209,7 @@ function renderScanlineTextMode()
 	ctx.putImageData(rowData,0,scanLine);
 
 	scanLine++;
-	scanLine=scanLine%0xff;
+	scanLine=scanLine&0xff;
 
 }
 

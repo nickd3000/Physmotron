@@ -1,0 +1,80 @@
+TODO file for TVM
+
+Misc notes and todo items.
+
+
+[ ] add declare word (finally)
+[ ] add declare 'n' number of bytes
+[ ] Text mode needs some memory allocated to specify each characters colour.
+[ ] Create a container for all hardware memory and registers? Might make things quicker?
+[ ] Tidy up code and add more comments.
+[ ] Add packed literals to operand specifiers.
+==
+[*] compiler check for unrecognised instructions
+[*] compiler check number of operands
+==
+[*] Made a major change to the way the virtual machine is structured.
+==
+[*] fixed move word from register to memory. Ex:
+	mov r1, word 512
+	mov word [10], word r1
+	mov word r2, word [10]
+[*] added move word/byte from address to register address ex:
+	move byte [r3], byte [var1]
+[*] mov r1, [r1]  (note same reg)
+[*] bug near line 110 in display? ... can't see a problem.
+[*] quick and dirty register display on web page
+[*] added mov address of register etc to register
+[*] fixed getSource when retrieving words (bytes were back to front)
+==
+[*] rearranged memory map
+[*] user data / code now starts at hw_programDataStart 0x11000
+[*] Added shift left and right [shl and shr]
+[*] added operations to clear various flags:
+	clc=clear carry, clz=clear zero, cls=clear sign, clb=clear break
+[*] add jump if carry clear - carry gets set if shift moves bit off the end.
+==
+[*] fix compare order
+[*] add multiply and divide sys calls MUL=30, DIV=31
+[*] add mouse coords at mem [505][506]
+[*] add basic joystick (cursor keys and ctrs, shift) mapped to:
+	up[510] down[511] left[512 right[513] fire1[514] fire2[515]
+[*] fixed compare byte at address with byte (eg: cmp [511], 1)
+==
+[*] Allow comments using the ; character
+[ ] Consume tab in web form -- how though?
+[*] Make we form use fixed width font
+[*] draw compile output to web page
+[*] add basic input - cursor keys and mouse
+
+
+[ ] add new opcodes:
+	// Jumps
+	[*] JE	equal
+	[*] JNE	not equal
+	[*] JG	greater
+	[*] JGE	greater or equal
+	[*] JL	less
+	[*] JLE	less/equal
+	// stack
+	[*] push all regs
+	[*] pop all regs
+	// maths
+	[*] SUB
+	[*] mul (syscall)
+	[*] div (syscall)
+	[*] shl
+	[*] shr
+	// logic
+	[ ] xor
+	[ ] or
+
+	// misc
+	[ ] xchg
+
+what are these, I spoted them in some sampler assembler (from x86??)?
+	[ ] sa
+	[ ] cwd
+	[ ] sar
+	[ ] in
+	[ ] test

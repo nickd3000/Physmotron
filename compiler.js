@@ -72,15 +72,10 @@ function compile(source)
 		if (tokens[0]==="") continue; // So skip empty lines.
 
 		// Hande data declarations.
+		// TODO: add word version of this.
 		if (tokens[0]=="db") {
 			compiledLine = declareBytes(lines[line]);
-
-			// Copied this from down below, should probs make it a function.
-			//for (var j=0;j<compiledLine.length;j++) {
-			//	byteCode[byteCode.length]=compiledLine[j]|0;
-			//}
 			copyBytesToByteCode(byteCode, compiledLine);
-			
 			continue;
 		}
 
@@ -109,19 +104,8 @@ function compile(source)
 			 }
 		}
 
-		// Keep old method for now...
-		//if (tokenCount>1) op1 = parseOperand(tokens[1]);
-		//if (tokenCount>2) op2 = parseOperand(tokens[2]);
-		//console.log("OP1: "+op1 + "   OP2: "+op2);
-
-
 		// Get instruction type id from string.
 		var itp = finditypeFromName(tokens[0].toLowerCase());
-		//console.log("FOUND : " + itp + " for " + tokens[0].toLowerCase());
-
-		// Search for opcode using instruction type and operand types.
-		//oc = findInstruction(itp, op1, op2);
-
 		
 		// Detect error, unrecognised opcode.
 		if (itp===-1) {
@@ -130,7 +114,6 @@ function compile(source)
 			compileOutput = compileOutput + "COMPILE ERROR: Instruction not recognised at line " + line + "\n";
 			compileOutput = compileOutput + "  > " + lines[line] + "\n";
 		} else  { // Error - wrong number of operands
-			
 			var numExpOperands = imapNew[instructionQuickLookup[itp]][1];
 			if ((numExpOperands==2 && op2===null) || (numExpOperands==1 && op1===null)) {
 				compileOutput = compileOutput + "COMPILE ERROR: Expected " + numExpOperands + " operands at " + line + "\n";
@@ -145,14 +128,7 @@ function compile(source)
 		// Add compiled line to bytecode.
 		sourceToCodeMap[line]=[byteCode.length, compiledLine.length];
 		
-		//for (var j=0;j<compiledLine.length;j++) {
-		//	byteCode[byteCode.length]=compiledLine[j]|0;
-		//}
 		copyBytesToByteCode(byteCode, compiledLine);
-		
-		//console.log("Bytecode:" + generateBytecodeLine(oc,op1,op2));
-
-
 
 	}
 
@@ -377,26 +353,6 @@ function generateBytecodeLineNew(opcode, op1, op2, curCodeLength)
 		}
 	}
 
-
-/*
-	if (op1!==null && op1[0]===op.BY) outputCode[pos++] = op1[2]|0;
-	if (op1!==null && (op1[0]===op.WO || op1[0]===op.AB || op1[0]===op.AW)) {
-		if (op1[3]!==-1) registerLabelUse(op1[3], pos+curCodeLength);
-		outputCode[pos++] = ((op1[2]>>24)&0xff)|0;
-		outputCode[pos++] = ((op1[2]>>16)&0xff)|0;
-		outputCode[pos++] = ((op1[2]>>8)&0xff)|0;
-		outputCode[pos++] = (op1[2]&0xff)|0;
-	}
-
-	if (op2!==null && op2[0]===op.BY) outputCode[pos++] = op2[2]|0;
-	if (op2!==null && (op2[0]===op.WO || op2[0]===op.AB || op2[0]===op.AW)) {
-		if (op2[3]!==-1) registerLabelUse(op2[3], pos+curCodeLength);
-		outputCode[pos++] = ((op2[2]>>24)&0xff)|0;
-		outputCode[pos++] = ((op2[2]>>16)&0xff)|0;
-		outputCode[pos++] = ((op2[2]>>8)&0xff)|0;
-		outputCode[pos++] = (op2[2]&0xff)|0;
-	}
-*/
 	return outputCode;
 }
 
@@ -487,76 +443,6 @@ function decodeOperator(val)
 	return decoded;
 }
 
-function generateBytecodeLine(opcode, op1, op2, curCodeLength)
-{
-	// remove this function soon
-	/*
-	var outputCode = [];
-	var pos=0;
-	outputCode[pos++] = opcode;
-
-	if (op1!==null && op1[0]===op.BY) outputCode[pos++] = op1[2]|0;
-	if (op1!==null && (op1[0]===op.WO || op1[0]===op.AB || op1[0]===op.AW)) {
-		if (op1[3]!==-1) registerLabelUse(op1[3], pos+curCodeLength);
-		outputCode[pos++] = ((op1[2]>>24)&0xff)|0;
-		outputCode[pos++] = ((op1[2]>>16)&0xff)|0;
-		outputCode[pos++] = ((op1[2]>>8)&0xff)|0;
-		outputCode[pos++] = (op1[2]&0xff)|0;
-	}
-
-	if (op2!==null && op2[0]===op.BY) outputCode[pos++] = op2[2]|0;
-	if (op2!==null && (op2[0]===op.WO || op2[0]===op.AB || op2[0]===op.AW)) {
-		if (op2[3]!==-1) registerLabelUse(op2[3], pos+curCodeLength);
-		outputCode[pos++] = ((op2[2]>>24)&0xff)|0;
-		outputCode[pos++] = ((op2[2]>>16)&0xff)|0;
-		outputCode[pos++] = ((op2[2]>>8)&0xff)|0;
-		outputCode[pos++] = (op2[2]&0xff)|0;
-	}
-
-	return outputCode; */
-}
-
-/*
-function findInstruction(iType, op1, op2)
-{
-	var matchType = false;
-	var matchOp1 = false;
-	var matchOp2 = false;
-	for (var i=0;i<imap.length;i++)
-	{
-		matchType=false;
-		matchOp1=false;
-		matchOp2=false;
-
-		if (imap[i][1]==iType) matchType=true;
-		else continue;
-
-		if (op1===null && imap[i][2]===null) matchOp1=true;
-		else if (op1!==null && imap[i][2]==op1[0]) matchOp1=true;
-		else continue;
-
-		if (op2===null && imap[i][3]===null) matchOp2=true;
-		else if (op2!==null && imap[i][3]==op2[0]) matchOp2=true;
-		else continue;
-
-
-		return imap[i][0];
-
-	}
-
-	console.log("No Matching instruction found." + " iType:" + iType + " op1:" + op1 + " op2:" + op2);
-	return -1;
-}
-*/
-
-
-// are there two operands?
-// are operands a valid source and target?
-/*function parseCheckMov(line, lineNumber)
-{
-	if (line.length<2) return 1;
-
-}*/
 
 
 // r1 [r1] 12 0xff label

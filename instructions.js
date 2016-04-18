@@ -1,10 +1,4 @@
-// instructions.js
-//'use strict';
-
-// http://www.masswerk.at/6502/6502_instruction_set.html
-
 // Machine instruction definitions.
-
 
 // Operator classes
 var opTypes = {
@@ -188,6 +182,8 @@ for (var ql = 0; ql<imapNew.length;ql++) {
 	instructionQuickLookup[imapNew[ql][0]]=ql;
 }
 
+
+// Work in progress...
 // Packed opcode literals.
 // we can have 64 different literals, they will be duplicated to include negative versions.
 var packedLiterals = [

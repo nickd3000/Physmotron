@@ -157,10 +157,10 @@ function draw() {
 
 	for (var j=0;j<0xff;j++) {
 		// C64 can do around 20000 CPU cycles per frame.
-		for (var i=0;i<10000;i++) {  // 10
+		for (var i=0;i<1;i++) {  // 10
 			tick();
 		}
-		redrawScreen(0xff);
+		redrawScreen(0x1);
 	}
 }
 

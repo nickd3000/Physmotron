@@ -1,4 +1,9 @@
 
+
+// This function loads the font data into the memory location specified.
+// * There are actually 127*8 bytes - the util i made to create the data was bugged.
+// * Each line represents one character
+// * each byte represents one row in the character (an 8 pixel bitmap)
 function _loadFont(loc)
 {
     console.log("Called loadFont");
