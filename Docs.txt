@@ -1,6 +1,9 @@
 
 Documentation - Work in progress...
-Physmotron TVM - Tiny virtual machine.
+Physmotron TVM - Physmo Tiny virtual machine.
+
+Written by Nick Donnelly - @nickd3000
+
 
 
 Example program:
