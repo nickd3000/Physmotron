@@ -6,9 +6,7 @@ var memSize = 1024*1024; // 1048576
 var mem = new Uint8Array(memSize);
 // Registers
 var hw_regs = [0,0,0,0,0,0,0,0,0,0,0];
-//var hw_r1 = 0;
-//var hw_r2 = 0;
-//var hw_r3 = 0;
+
 var hw_pc = 0;
 var hw_stackTop = 1280; // size = 0xff;
 var hw_sp = hw_stackTop;
@@ -22,14 +20,16 @@ var hw_cursorX = 1027;		// Text cursor x
 var hw_cursorY = 1028;		// text cursor y
 var hw_screenOffset = 1029;	// Word pointer to display pixels.
 // input
-var hw_mouseX = 1088;		// Text cursor x
-var hw_mouseY = 1089;		// text cursor y
-var hw_joyUp = 1090;		// text cursor y
-var hw_joyDown = 1091;		// text cursor y
-var hw_joyLeft = 1092;		// text cursor y
-var hw_joyRight = 1093;		// text cursor y
-var hw_joyB1 = 1094;		// text cursor y
-var hw_joyB2 = 1095;		// text cursor y
+var hw_mouseX = 1088;		// Mouse x (0..255)
+var hw_mouseY = 1089;		// Mouse Y (0..255)
+var hw_mouseLeft = 1090;		// Mouse Left Button
+var hw_mouseRight = 1091;		// Mouse Right Button
+var hw_joyUp = 1094;		// text cursor y
+var hw_joyDown = 1095;		// text cursor y
+var hw_joyLeft = 1096;		// text cursor y
+var hw_joyRight = 1097;		// text cursor y
+var hw_joyB1 = 1098;		// text cursor y
+var hw_joyB2 = 1099;		// text cursor y
 
 
 var hw_fontLocation = 0x600; // 1536   320b
@@ -191,7 +191,7 @@ function tick()
 	var iOp1 = null, iOp2 = null;
 	var val1=0|0;
 
-	// Read  one or two operator descriptors if instruction allows.
+	// Read  zero, one or two operator descriptors, depending on the instruction.
 	if (numOps>0) iOp1 = mem[hw_pc++];
 	if (numOps>1) iOp2 = mem[hw_pc++];
 
@@ -199,8 +199,6 @@ function tick()
 
 	// Read any extra data for operator.
 	var ed1=0|0,ed2=0|0;
-
-
 	var decoded1 = decodeOperator(iOp1);
 	var decoded2 = decodeOperator(iOp2);
 
@@ -211,25 +209,9 @@ function tick()
 
 		case itype.MOV:
 			var addr1=null, addr2=null;
-			//if (iOp1===op.AB) addr1=getSource(op.WO); // Pointers are always words.
-			//if (iOp1===op.AW) addr1=getSource(op.WO);
-			//if (iOp2===op.AB) addr2=getSource(op.WO);
-			//if (iOp2===op.AW) addr2=getSource(op.WO);
 			var srcVal = getSource(iOp2,ed2);
 
 			setTarget(iOp1,srcVal,ed1);
-			/*
-			if (iOp2===op.AR1B || iOp2===op.AR2B || iOp2===op.AR3B) {
-				 //addr=getSource(op.WO);
-				 setTarget(iOp1, getSource(iOp2,addr2), null);
-			}
-			else if (iOp2===op.AB || iOp2===op.AW ) {
-				 addr=getSource(op.WO);
-				 setTarget(iOp1, getSource(iOp2,addr2), null);
-			}
-			else {
-				 setTarget(iOp1, getSource(iOp2,null), addr1);
-			}*/
 
 		break;
 
@@ -388,21 +370,6 @@ function popAll()
 }
 
 
-function processMiscInstruction(instr) {
-
-	switch(instr)
-	{
-		case opcode.BRK:
-
-		break;
-		default:
-			console.log("processMiscInstruction: Misc instruction not found: " + instr);
-			break;
-	}
-
-}
-
-
 function findInstructionInMap (pInst) {
 	return instructionQuickLookup[pInst];
 }
@@ -427,9 +394,7 @@ function getFlag(flag)
 // Stack operations.
 function pushByte(data)
 {
-	//console.log("Pushbyte Start hw_sp="+hw_sp);
 	mem[hw_sp--] = data&0xff;
-	//console.log("Pushbyte End hw_sp="+hw_sp);
 }
 
 // I'm changing words to be 32 bit...
@@ -443,11 +408,8 @@ function pushWord(data)
 
 function popByte()
 {
-	//console.log("Popbyte START hw_sp="+hw_sp);
 	var popValue = mem[++hw_sp]&0xff;
-	//console.log("Value="+popValue);
 	return popValue;
-	//console.log("Popbyte END hw_sp="+hw_sp);
 }
 
 function popWord()
@@ -460,6 +422,7 @@ function popWord()
 	return (byte1<<24)+(byte2<<16)+(byte3<<8)+byte4;
 }
 
+// Convert number to hex and pad to charLength characters (not counting the 0x)
 function toHex(val, charLength)
 {
 	var hexStr = val.toString(16);
@@ -495,11 +458,6 @@ function dumpMemory()
 // Read a word using PC as position, increase PC by 4
 function getNextWord()
 {
-	//var total = mem[hw_pc++];
-	//total = total<<8;
-	//total+= mem[hw_pc++];
-	//return total;
-
 	var byte1 = mem[hw_pc++];
 	var byte2 = mem[hw_pc++];
 	var byte3 = mem[hw_pc++];
@@ -537,28 +495,6 @@ function setTarget (op, val, addr)
 		case opTypes.FLAGS: hw_flags = val; break;
 		case opTypes.SP: hw_sp = val; break;
 	}
-
-	/*
-	switch (trg) {
-		case op.R1:	hw_r1 = val;	break;
-		case op.R2:	hw_r2 = val;	break;
-		case op.R3:	hw_r3 = val;	break;
-		case op.AR1B:	storeByte(hw_r1,val);	break;
-		case op.AR2B:	storeByte(hw_r2,val);	break;
-		case op.AR3B:	storeByte(hw_r3,val);	break;
-		case op.AR1W:	storeWord(hw_r1,val);	break;
-		case op.AR2W:	storeWord(hw_r2,val);	break;
-		case op.AR3W:	storeWord(hw_r3,val);	break;
-		case op.PC:	hw_pc = val; break;
-		case op.SP:	hw_sp = val; break;
-		case op.FL:	hw_flags = val; break;
-
-		// We need two vars for these operations...
-		case op.AB:	storeByte(addr,val); break;
-		case op.AW:	storeWord(addr,val); break;
-		//case TBY:	 break;	// TODO: throw an error if we try to write to a constant.
-		//case TWO:	 break;
-	}*/
 }
 
 
@@ -588,27 +524,6 @@ function getSource(op,val)
 		case opTypes.SP: return hw_sp; //break;
 	}
 
-
-	//if (src===40) {
-//		return val;
-//	}
-
-	/*
-	switch (src) {
-		case op.R1: return hw_r1;
-		case op.R2: return hw_r2;
-		case op.R3: return hw_r3;
-		case op.BY: return mem[hw_pc++];
-		case op.WO: return (mem[hw_pc++]<<24)+(mem[hw_pc++]<<16)+(mem[hw_pc++]<<8)+mem[hw_pc++];
-		case op.AB: return mem[addr];
-		case op.AW: return (mem[addr]<<24)+(mem[addr+1]<<16)+(mem[addr+2]<<8)+mem[addr+3];
-		case op.AR1B: return mem[hw_r1];
-		case op.AR2B: return mem[hw_r2];
-		case op.AR3B: return mem[hw_r3];
-		case op.AR1W: return (mem[hw_r1]<<24)+(mem[hw_r1+1]<<16)+(mem[hw_r1+2]<<8)+mem[hw_r1+3];
-		case op.AR2W: return (mem[hw_r2]<<24)+(mem[hw_r2+1]<<16)+(mem[hw_r2+2]<<8)+mem[hw_r2+3];
-		case op.AR3W: return (mem[hw_r3]<<24)+(mem[hw_r3+1]<<16)+(mem[hw_r3+2]<<8)+mem[hw_r3+3];
-	}*/
 }
 
 // Store a byte in memory.
@@ -640,183 +555,4 @@ function getWord(addr)
 	combined = (mem[addr]<<24)+(mem[addr+1]<<16)+(mem[addr+2]<<8)+mem[addr+3];
 	//(mem[hw_r3]<<24)+(mem[hw_r3+1]<<16)+(mem[hw_r3+2]<<8)+mem[hw_r3+3];
 	return combined;
-}
-
-
-
-function loadTestBinary(number)
-{
-	var l=0;
-	if (number==1)
-	{
-		mem[0] = MOVB_R1;
-		mem[1] = 0;
-		mem[2] = MOVB_R2;
-		mem[3] = 5;
-		mem[4] = INC_R1;
-		mem[5] = CMP_R1_R2;
-		mem[6] = JMPEQ;
-		mem[7] = 0;
-		mem[8] = 12;
-		mem[9] = JMPW;
-		mem[10] = 0;
-		mem[11] = 4;
-		mem[12] = MOVB_R3;
-		mem[13] = 66;
-	}
-
-	// test reg to reg.
-	if (number==2)
-	{
-		mem[0] = MOVB_R1;
-		mem[1] = 11;
-		mem[2] = MOVB_R2;
-		mem[3] = 22;
-		mem[4] = MOVB_R3;
-		mem[5] = 33;
-		mem[6] = MOV_R1_R3;	// r1 = 33
-		mem[6] = MOV_R3_R2;	// r3 = 22
-	}
-
-	// test incriments
-	if (number==3)
-	{
-		mem[l++] = MOVB_R1;
-		mem[l++] = 1;
-		mem[l++] = MOVB_R2;
-		mem[l++] = 2;
-		mem[l++] = MOVB_R3;
-		mem[l++] = 3;
-		mem[l++] = INC_R1;
-		mem[l++] = INC_R2;
-		mem[l++] = INC_R3;
-		mem[l++] = DEC_R1;
-		mem[l++] = DEC_R2;
-		mem[l++] = DEC_R3;
-	}
-
-	// test stack.
-	if (number==4)
-	{
-		mem[l++] = MOVB_R1;
-		mem[l++] = 11;
-		mem[l++] = MOVB_R2;
-		mem[l++] = 22;
-		mem[l++] = PUSHB_R1;
-		mem[l++] = PUSHB_R2;
-		mem[l++] = POPB_R3;
-		mem[l++] = PUSHW_R1;
-		mem[l++] = POPW_R2;
-	}
-
-	// test move reg to address
-	if (number==5)
-	{
-		mem[l++] = MOVB_R1;
-		mem[l++] = 111;
-		mem[l++] = MOVB_R2;
-		mem[l++] = 222;
-		mem[l++] = MOV_AW_R1;
-		mem[l++] = 0;
-		mem[l++] = 16;
-		mem[l++] = MOV_AW_R2;
-		mem[l++] = 0;
-		mem[l++] = 17;
-	}
-
-	// test ADD
-	if (number==6)
-	{
-		mem[l++] = MOVB_R1;
-		mem[l++] = 11;
-		mem[l++] = MOVB_R2;
-		mem[l++] = 22;
-		mem[l++] = ADD_R1_R2;
-		mem[l++] = ADD_R3_R1;
-	}
-
-	// test Syscall
-	if (number==7)
-	{
-		mem[l++] = MOVB_R1;
-		mem[l++] = 11;
-		mem[l++] = PUSHW_R1;
-		mem[l++] = SYSCALL;
-		mem[l++] = SYS_LOGBYTE;
-	}
-
-	// Test stack with new word size.
-	if (number==8)
-	{
-		mem[l++] = MOVW_R1;
-		mem[l++] = 4;
-		mem[l++] = 3;
-		mem[l++] = 2;
-		mem[l++] = 1;
-		mem[l++] = PUSHW_R1;
-		mem[l++] = SYSCALL;
-		mem[l++] = SYS_LOGBYTE;
-	}
-
-	// test writing to display memory.
-	if (number==9)
-	{
-		mem[l++] = MOVW_R1;
-		mem[l++] = 0;
-		mem[l++] = 0;
-		mem[l++] = 4;
-		mem[l++] = 1;
-		mem[l++] = MOVB_R2;
-		mem[l++] = 1;
-		mem[l++] = MOVB_AR1_R2;
-		mem[l++] = INC_R1;
-		mem[l++] = INC_R2;
-		mem[l++] = JMPW;
-		mem[l++] = 0;
-		mem[l++] = 0;
-		mem[l++] = 0;
-		mem[l++] = 7;
-	}
-
-	// test writing to display memory.
-	if (number==10)
-	{
-		mem[l++] = opcode.MOVW_R1;	// Set r1 to address of screen memory.
-		mem[l++] = 0;
-		mem[l++] = 0;
-		mem[l++] = 4;
-		mem[l++] = 1;
-		mem[l++] = opcode.MOVB_R2;
-		mem[l++] = 1;
-		mem[l++] = opcode.MOVB_AR1_R2;
-		mem[l++] = opcode.INC_R1;
-		mem[l++] = opcode.INC_R2;
-		mem[l++] = opcode.INC_R3;
-		// need to be able to push a byte to stack
-		mem[l++] = opcode.PUSHB;			// push x
-		mem[l++] = 25;
-		mem[l++] = opcode.PUSHB;			// Push y
-		mem[l++] = 25;
-		mem[l++] = opcode.PUSHB_R3;		// Push col
-		mem[l++] = opcode.SYSCALL;			// set pixel
-		mem[l++] = SYS_SETPIXEL;
-		mem[l++] = opcode.JMPW;
-		mem[l++] = 0;
-		mem[l++] = 0;
-		mem[l++] = 0;
-		mem[l++] = 7;
-	}
-
-}
-
-
-
-
-// INIT ROM
-function initRom(){
-
-}
-
-function loadFont() {
-
 }
