@@ -40,10 +40,24 @@ function webStepCheckbox() {
 	var checkedValue = document.getElementById("step").checked;
 	if (checkedValue==false) {
 		//console.log("false");
-		
+		setSteppingMode(false);
+		draw();
 	} else {
 		//console.log("true");
 		setSteppingMode(true);
+	}
+	
+}
+
+function webWarpCheckbox() {
+	
+	var checkedValue = document.getElementById("warp").checked;
+	if (checkedValue==false) {
+		//console.log("false");
+		setWarpMode(false);
+	} else {
+		//console.log("true");
+		setWarpMode(true);
 	}
 	
 }

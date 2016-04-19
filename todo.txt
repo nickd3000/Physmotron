@@ -3,6 +3,12 @@ TODO file for TVM
 Misc notes and todo items.
 
 
+*[ ] jgt crashes (I know it should be jg but there was no error)
+	There is an error display, although I've made compilation stop on any error now.
+*[ ] doesn't seem to have an error of a label doesn't exist even when you use it
+*[ ] typo 'mov word b6,word r3' doesn't produce an error
+[ ] Add warp mode for Tony.
+[ ] Reduce number of decodes done per operand (let's not do 2 per op as they are expensive)
 [ ] add declare word (finally)
 [ ] add declare 'n' number of bytes
 [ ] Text mode needs some memory allocated to specify each characters colour.

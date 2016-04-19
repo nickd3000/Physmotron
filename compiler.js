@@ -63,10 +63,6 @@ function compile(source)
 		var strLine = stripCommentFromLine(lines[line]);
 		var tokens = strLine.trim().split(/[ ,/\t]+/); // (/[ ,/t]+/)
 		var tokenCount = tokens.length;
-		//console.log("Line:"+line+" Tokens:"+tokenCount);
-
-		// Debug: print each token in line.
-		//for (var j=0;j<tokenCount;j++) console.log("Token:" + tokens[j]);
 
 		// We may have consumed a label or comment statement which resulted in a blank line.
 		if (tokens[0]==="") continue; // So skip empty lines.
@@ -78,13 +74,21 @@ function compile(source)
 			copyBytesToByteCode(byteCode, compiledLine);
 			continue;
 		}
+		if (tokens[0]=="dw") {
+			compiledLine = declareWords(lines[line]);
+			copyBytesToByteCode(byteCode, compiledLine);
+			continue;
+		}
 
 		op1 = null;
 		op2 = null;
 		oc = null;
+		
 		var isWord=false;
 		var ti=1; // token iterator.
 		for (ti=1;ti<tokenCount;ti++) {
+			
+			// Detect if special keyword byte or word was used.
 			if (tokens[ti]=="byte") {
 				 isWord=false;
 				 ti++;
@@ -113,11 +117,13 @@ function compile(source)
 			console.log("  > " + lines[line]);
 			compileOutput = compileOutput + "COMPILE ERROR: Instruction not recognised at line " + line + "\n";
 			compileOutput = compileOutput + "  > " + lines[line] + "\n";
+			break;
 		} else  { // Error - wrong number of operands
 			var numExpOperands = imapNew[instructionQuickLookup[itp]][1];
 			if ((numExpOperands==2 && op2===null) || (numExpOperands==1 && op1===null)) {
 				compileOutput = compileOutput + "COMPILE ERROR: Expected " + numExpOperands + " operands at " + line + "\n";
 				compileOutput = compileOutput + "  > " + lines[line] + " \n";
+				break;
 			}
 		}
 
@@ -243,13 +249,13 @@ function declareBytes(line)
 	var result = [], strMid="", curTok;
 	// Tokenise the line, preserving quoted text.
 	tokens = line.match(/\w+|"[^"]+"/g);
-	//console.log("** declareBytes");
+	
 	for (var i=1;i<tokens.length;i++) {
 		curTok=tokens[i];
-		//console.log(">" + i + ">"+curTok+"<");
+	
 		if (isNaN(parseInt(curTok))===false)
 		{
-			result[result.length] = parseInt(curTok)|0;
+			result[result.length] = parseInt(curTok)&0xff;
 		}
 
 		if (curTok.substring(0,1)=='"' && curTok.substring(curTok.length-1,curTok.length)=='"')
@@ -260,10 +266,37 @@ function declareBytes(line)
 			}
 		}
 	}
-	//console.log("** declareBytes end");
-	//for (i=0;i<result.length;i++) { console.log(result[i]); }
+	
 	return result;
 }
+
+// When the compiler detects a line with db (declare byte) at the start,
+// this function is called to parse the line.
+// Note: unlike declareBytes, strings are not supported.
+function declareWords(line)
+{
+	var result = [], strMid="", curTok;
+	// Tokenise the line, preserving quoted text.
+	tokens = line.match(/\w+|"[^"]+"/g);
+	
+	for (var i=1;i<tokens.length;i++) {
+		curTok=tokens[i];
+	
+		if (isNaN(parseInt(curTok))===false)
+		{
+			var tVal = parseInt(curTok)&0xffffffff;
+			result[result.length] 
+			result[result.length] = ((tVal>>24)&0xff)|0;
+			result[result.length] = ((tVal>>16)&0xff)|0;
+			result[result.length] = ((tVal>>8)&0xff)|0;
+			result[result.length] = (tVal&0xff)|0;
+		}
+
+	}
+	
+	return result;
+}
+
 
 function scanLinesForLabels(lines)
 {

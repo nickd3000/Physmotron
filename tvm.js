@@ -56,6 +56,7 @@ var carry_flag = 1<<3;
 
 var stopAnimation = false;
 var steppingMode = false;
+var warpMode = false;
 
 // Load bytecode from an int array to a memory location.
 function loadBytecode(bc, addr) {
@@ -154,10 +155,12 @@ function draw() {
 
 	if (steppingMode===false) requestAnimationFrame(draw);
 
+	var numTicksPerScanline = 10;
+	if (warpMode==true) numTicksPerScanline = 500;
 
 	for (var j=0;j<0xff;j++) {
 		// C64 can do around 20000 CPU cycles per frame.
-		for (var i=0;i<1;i++) {  // 10
+		for (var i=0;i<numTicksPerScanline;i++) {  // 10
 			tick();
 		}
 		redrawScreen(0x1);
@@ -377,6 +380,11 @@ function findInstructionInMap (pInst) {
 function setSteppingMode(to)
 {
 	steppingMode = to;
+}
+
+function setWarpMode(to)
+{
+	warpMode = to;
 }
 
 // Set a bit (using the flag bit mask) in hw_flags to value (0|1)
