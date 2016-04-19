@@ -1,0 +1,6 @@
+{
+  "name": "Tvm",
+  "tagline": "",
+  "body": "# TVM\r\nTVM is a Tiny Virtual Machine written in Javascript that includes an assembler and a virtual display.\r\n\r\nHere is a link to a hosted copy of TVM with a sample program written in TVM assembler code that draws a rotating 3D cube\r\nhttp://www.physmo.com/tvmcube\r\n\r\n## Machine Features\r\nThe virtual machine has 8 32 bit registers, a stack, most common assembly instructions, labels and jumps, data declarations, and a 2 mode display device (text and graphics mode).\r\n\r\n",
+  "note": "Don't delete this file! It's used internally to help with page regeneration."
+}
