@@ -19,10 +19,10 @@ call label    // Jump to label (stack contains return location)
 poa           // Pop r1,r2,r3 back from stack
 brk           // Stop execution
 
-label:            // A label we can jump to
-  mov [2048], 48  // Put a '0' character to screen text memory
-  mov [503], 14   // Change background colour to light blue
-  ret             // return from jump - only use it after a cal
+	label:            // A label we can jump to
+	mov [0xa00], 48  // Put a '0' character to screen text memory
+	mov [1025], 14   // Change background colour to light blue
+	ret             // return from jump - only use it after a cal
 
 
 // Please put data declarations at end of source for now.

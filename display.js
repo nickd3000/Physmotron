@@ -19,6 +19,15 @@ var palette = [
 	0x6C, 0x5E, 0xB5,	// 14 light blue
 	0x95, 0x95, 0x95];	// 15 grey light
 
+var colourLookup = [];
+for (var c=0;c<0xff;c++)
+{
+	colourLookup[colourLookup.length] = (c&3)*85;
+	colourLookup[colourLookup.length] = ((c>>2)&7)*36;
+	colourLookup[colourLookup.length] = ((c>>5)&7)*36;
+	colourLookup[colourLookup.length] = 0xff;
+}
+
 var canvas;// = document.getElementById('canvas');
 var ctx;// = canvas.getContext('2d');
 var cw;// = canvas.width;
@@ -126,13 +135,21 @@ function renderScanlineGraphicsMode()
 	var pixel=0, x4=0;
 	var yShift = 256*scanLine;
 	var pixelLocation = getWord(hw_screenOffset);
+	var lookupIndex = 0;
 	for (var x=0;x<256;x++) {
-		x4 = x*4;
+		//x4 = x*4;
 		pixel = mem[pixelLocation+x+yShift];
+		/*
 		rowData.data[x4] = (pixel&3)*85;
 		rowData.data[x4+1] = ((pixel>>2)&7)*36;
 		rowData.data[x4+2] = ((pixel>>5)&7)*36;
-		rowData.data[x4+3] = 0xff;
+		rowData.data[x4+3] = 0xff;*/
+		lookupIndex = pixel*4;
+		rowData.data[x4] = colourLookup[lookupIndex++];
+		rowData.data[x4+1] = colourLookup[lookupIndex++];
+		rowData.data[x4+2] = colourLookup[lookupIndex++];
+		rowData.data[x4+3] = colourLookup[lookupIndex++];
+		x4+=4;
 	}
 	ctx.putImageData(rowData,0,scanLine);
 	scanLine++;
