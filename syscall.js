@@ -20,7 +20,6 @@ var SYS_MEMCPY	= 51;	// word src, word dest, word length
 var SYS_MEMCPYI	= 52;	// word src, word dest, word length, byte ignore
 
 
-
 function sysCall(id)
 {
 	//console.log("SYSCALL ID: "+id);

@@ -126,11 +126,18 @@ function compile(source)
 				break;
 			}
 		}
+		// Detect bad operators.
+		if ((op1!=null && op1[0]==-1) || (op2!=null && op2[0]==-1)) {
+			var badOp = "";
+			if (op1[0]==-1) badOp = op1[1]; else badOp = op2[1]; 
+			console.log("COMPILE ERROR: Operator '" + badOp + "' not recognised at line " + line);
+			console.log("  > " + lines[line]);
+			compileOutput = compileOutput + "COMPILE ERROR: Operator '" + badOp + "' not recognised at line " + line + "\n";
+			compileOutput = compileOutput + "  > " + lines[line] + "\n";
+		}
 
-		//compiledLine = generateBytecodeLine(oc,op1,op2,byteCode.length);
 		compiledLine = generateBytecodeLineNew(itp,op1,op2,byteCode.length);
 
-		//byteCode += compiledLine;
 		// Add compiled line to bytecode.
 		sourceToCodeMap[line]=[byteCode.length, compiledLine.length];
 		
@@ -312,20 +319,14 @@ function scanLinesForLabels(lines)
 			// 1. Remove it from the source line.
 			// 2. Add a new row to the labelList.
 			if (tokens[t][tokens[t].length-1] == ":") {
-				// console.log("Found a label: {" + tokens[t] + "}");
-				//console.log("Before: "+lines[i]);
 				// Remove label from the line.
 				lines[i] = lines[i].replace(tokens[t],'');
-				//console.log("After: "+lines[i]);
 				var newRow = new Array(tokens[t].replace(':',''),i,-1);
 				labelList.push(newRow);
 
 			}
 		}
 	}
-
-	//console.log("labelList --> "+labelList);
-
 }
 
 
@@ -483,7 +484,7 @@ function parseOperand(operand, isWord)
 {
 	// Result contains the operand type id, the original string,
 	// and the integer representation if applicable.
-	var result = [0,operand,0,-1,0]; // [opType, string, value, label ID, regId]
+	var result = [-1,operand,0,-1,0]; // [opType, string, value, label ID, regId]
 	var strLength = operand.length;
 
 	//console.log("parseOperand input:" + op + ":");
@@ -511,7 +512,7 @@ function parseOperand(operand, isWord)
 		if (result[0]==opTypes.BAREG) result[0]=opTypes.WAREG;
 	}
 
-	if (result[0]!==0) return result;
+	if (result[0]!=-1) return result;
 
 
 	//console.log("parseOperand result:" + result[0]);
@@ -552,18 +553,9 @@ function parseOperand(operand, isWord)
 	for (var i=0;i<labelList.length;i++)
 	{
 		if (labelList[i][0]==operand) {
-			//console.log("LABEL USE FOUND!! " + operand);
-
-			//if (isWord===true) result[0] = opTypes.WADDR;
-			//else result[0] = opTypes.BADDR;
-			// test:
 			result[0] = opTypes.WLIT;
-			//else result[0] = opTypes.BADDR;
-
 			result[2] = 0xffffffff;
 			result[3] = i; //record the label id for the detected label.
-			//var newRow = new Array(i, );
-			//labelUsedList.push(newRow);
 			return result;
 		}
 	}
@@ -574,20 +566,14 @@ function parseOperand(operand, isWord)
 		for (var j=0;j<labelList.length;j++)
 		{
 			if (labelList[j][0]==strMid) {
-				// console.log("LABEL (pointer) USE FOUND!! " + operand);
-
 				if (isWord===true) result[0] = opTypes.WADDR; // word address
 				else result[0] = opTypes.BADDR;
 				result[2] = 0xffffffff;
 				result[3] = j; //record the label id for the detected label.
-				//var newRow = new Array(i, );
-				//labelUsedList.push(newRow);
 				return result;
 			}
 		}
 	}
-// var newRow = new Array(tokens[t].replace(':',''),i,-1);
-// labelList.push(newRow);
 
 	return result;
 }
