@@ -137,7 +137,6 @@ function renderScanlineGraphicsMode()
 	var pixelLocation = getWord(hw_screenOffset);
 	var lookupIndex = 0;
 	for (var x=0;x<256;x++) {
-		//x4 = x*4;
 		pixel = mem[pixelLocation+x+yShift];
 		/*
 		rowData.data[x4] = (pixel&3)*85;
@@ -145,11 +144,11 @@ function renderScanlineGraphicsMode()
 		rowData.data[x4+2] = ((pixel>>5)&7)*36;
 		rowData.data[x4+3] = 0xff;*/
 		lookupIndex = pixel*4;
-		rowData.data[x4] = colourLookup[lookupIndex++];
-		rowData.data[x4+1] = colourLookup[lookupIndex++];
-		rowData.data[x4+2] = colourLookup[lookupIndex++];
-		rowData.data[x4+3] = colourLookup[lookupIndex++];
-		x4+=4;
+		rowData.data[x4++] = colourLookup[lookupIndex++];
+		rowData.data[x4++] = colourLookup[lookupIndex++];
+		rowData.data[x4++] = colourLookup[lookupIndex++];
+		rowData.data[x4++] = colourLookup[lookupIndex++];
+
 	}
 	ctx.putImageData(rowData,0,scanLine);
 	scanLine++;
