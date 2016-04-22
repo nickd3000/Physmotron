@@ -117,7 +117,8 @@ function redrawScreen(amount)
 		scanLine=scanLine%0xff;
 		mem[hw_scanLine] = scanLine;
 		if (mode===0) renderScanlineTextMode();
-		else renderScanlineGraphicsMode();
+		else if (mode===1) renderScanlineGraphicsMode();
+		else if (mode===2) renderScanlineGraphicsModeGrayscale();
 	}
 	scanLine=scanLine%0xff; // Wrap scanline.
 
@@ -155,6 +156,23 @@ function renderScanlineGraphicsMode()
 
 }
 
+// Draw a full scanline to the display.
+function renderScanlineGraphicsModeGrayscale()
+{
+	"use strict";
+	var pixel=0, x4=0;
+	var yShift = 256*scanLine;
+	var pixelLocation = getWord(hw_screenOffset);
+	for (var x=0;x<256;x++) {
+		pixel = mem[pixelLocation+x+yShift]|0xff;
+		rowData.data[x4++] = pixel;
+		rowData.data[x4++] = pixel;
+		rowData.data[x4++] = pixel;
+		rowData.data[x4++] = 0xff;
+	}
+	ctx.putImageData(rowData,0,scanLine);
+	scanLine++;
+}
 
 
 function redrawTextMode(){
