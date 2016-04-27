@@ -167,22 +167,36 @@ function draw() {
 	}
 }
 
+
+// 
+var _instr;
+var _mapI;
+var _numOps;
+var _iOp1;
+var _iOp2;
+var _val1;
+var _ed1;
+var _ed2;
+var _decoded1;
+var _decoded2;
+var _srcVal;
+var _result;
+var _amount;
+
 function tick()
 {
 	"use strict";
 
 	if (getFlag(break_flag)>0) return;
 
+	_instr = mem[hw_pc++]|0;
+	_mapI = findInstructionInMap(_instr);
 
+	//console.log("Trace: PC:" + hw_pc + "   instr:" + instr  + "   _mapI:" + _mapI);
 
-	var instr = mem[hw_pc++]|0;
-	var mapI = findInstructionInMap(instr);
+	if (_mapI===null) return;
 
-	//console.log("Trace: PC:" + hw_pc + "   instr:" + instr  + "   mapI:" + mapI);
-
-	if (mapI===null) return;
-
-	if (mapI===undefined) {
+	if (_mapI===undefined) {
 		console.log("VM ERROR: Instruction not found at byte " + hw_pc);
 		setFlag(break_flag,1);
 		var trap = 1;
@@ -190,97 +204,98 @@ function tick()
 	}
 
 
-	var numOps = imapNew[mapI][1];
-	var iOp1 = null, iOp2 = null;
-	var val1=0|0;
+	_numOps = imapNew[_mapI][1];
+	_iOp1 = null;
+	_iOp2 = null;
+	_val1=0|0;
 
 	// Read  zero, one or two operator descriptors, depending on the instruction.
-	if (numOps>0) iOp1 = mem[hw_pc++];
-	if (numOps>1) iOp2 = mem[hw_pc++];
+	if (_numOps>0) _iOp1 = mem[hw_pc++];
+	if (_numOps>1) _iOp2 = mem[hw_pc++];
 
-	//console.log("found:" + mapI + ", iID:" + iID + ", iType:" + iType + ", iOp1:" + iOp1 + ", iOp2:"+ iOp2 + "");
+	//console.log("found:" + _mapI + ", iID:" + iID + ", iType:" + iType + ", _iOp1:" + _iOp1 + ", _iOp2:"+ _iOp2 + "");
 
 	// Read any extra data for operator.
-	var ed1=0|0,ed2=0|0;
-	var decoded1 = decodeOperator(iOp1);
-	var decoded2 = decodeOperator(iOp2);
+	_ed1=0|0;
+	_ed2=0|0;
+	_decoded1 = decodeOperator(_iOp1);
+	_decoded2 = decodeOperator(_iOp2);
 
-	if (iOp1!==null) ed1 = readExtraData(decoded1[0]);
-	if (iOp2!==null) ed2 = readExtraData(decoded2[0]);
+	if (_iOp1!==null) _ed1 = readExtraData(_decoded1[0]);
+	if (_iOp2!==null) _ed2 = readExtraData(_decoded2[0]);
 
-	switch(instr) {
+	switch(_instr) {
 
 		case itype.MOV:
-			var addr1=null, addr2=null;
-			var srcVal = getSource(iOp2,ed2);
+			_srcVal = getSource(_decoded2,_ed2);
 
-			setTarget(iOp1,srcVal,ed1);
+			setTarget(_decoded1,_srcVal,_ed1);
 
 		break;
 
 		case itype.ADD:
-		 	setTarget(iOp1,(getSource(iOp1,ed1)+getSource(iOp2,ed2))&0xffffffff,ed1);
+		 	setTarget(_decoded1,(getSource(_decoded1,_ed1)+getSource(_decoded2,_ed2))&0xffffffff,_ed1);
 		break;
 		case itype.SUB:
-		 	setTarget(iOp1,(getSource(iOp1,ed1)-getSource(iOp2,ed2))&0xffffffff,ed1);
+		 	setTarget(_decoded1,(getSource(_decoded1,_ed1)-getSource(_decoded2,_ed2))&0xffffffff,_ed1);
 		break;
 		case itype.MUL:
-		 	setTarget(iOp1,(getSource(iOp1,ed1)*getSource(iOp2,ed2))&0xffffffff,ed1);
+		 	setTarget(_decoded1,(getSource(_decoded1,_ed1)*getSource(_decoded2,_ed2))&0xffffffff,_ed1);
 		break;
 		case itype.DIV:
-		 	setTarget(iOp1,((getSource(iOp1,ed1)/getSource(iOp2,ed2))|0)&0xffffffff,ed1);
+		 	setTarget(_decoded1,((getSource(_decoded1,_ed1)/getSource(_decoded2,_ed2))|0)&0xffffffff,_ed1);
 		break;
 
 		case itype.JMP:
 			//hw_pc = getSource(op.WO);
-			hw_pc = ed1; //getSource(iOp1,ed1);
+			hw_pc = _ed1; //getSource(_iOp1,_ed1);
 		break;
 
 		case itype.CMP:
-			var result = getSource(iOp1,ed1) - getSource(iOp2,ed2);
+			_result = getSource(_decoded1,_ed1) - getSource(_decoded2,_ed2);
 			setFlag(zero_flag,0);
 			setFlag(sign_flag,0);
-			if (result===0) setFlag(zero_flag,1);
-			else if (result<0) setFlag(sign_flag,1);
+			if (_result===0) setFlag(zero_flag,1);
+			else if (_result<0) setFlag(sign_flag,1);
 			else setFlag(sign_flag,0);
 			break;
-		case itype.INC: setTarget(iOp1, getSource(iOp1,ed1) + 1);	break;
-		case itype.DEC: setTarget(iOp1, getSource(iOp1)-1, null);	break;
+		case itype.INC: setTarget(_decoded1, getSource(_decoded1,_ed1) + 1);	break;
+		case itype.DEC: setTarget(_decoded1, getSource(_decoded1)-1, null);	break;
 
 		case itype.JE:
-			if (getFlag(zero_flag)) hw_pc = ed1;
+			if (getFlag(zero_flag)) hw_pc = _ed1;
 
 			break;
 		case itype.JNE:
-			if (getFlag(zero_flag)===0) hw_pc = ed1;
+			if (getFlag(zero_flag)===0) hw_pc = _ed1;
 
 			break;
 		case itype.JL:
-			if (getFlag(sign_flag)>0) hw_pc = ed1;
+			if (getFlag(sign_flag)>0) hw_pc = _ed1;
 
 			break;
 		case itype.JLE:
-			if (getFlag(sign_flag)>0 || getFlag(zero_flag)) hw_pc = ed1;
+			if (getFlag(sign_flag)>0 || getFlag(zero_flag)) hw_pc = _ed1;
 
 			break;
 		case itype.JG:
-			if (getFlag(sign_flag)===0 && getFlag(zero_flag)===0) hw_pc = ed1;
+			if (getFlag(sign_flag)===0 && getFlag(zero_flag)===0) hw_pc = _ed1;
 
 			break;
 		case itype.JGE:
-			if (getFlag(sign_flag)===0 || getFlag(zero_flag)) hw_pc = ed1;
+			if (getFlag(sign_flag)===0 || getFlag(zero_flag)) hw_pc = _ed1;
 
 			break;
-		case itype.PUB: pushByte(getSource(iOp1,ed1)); break;
-		case itype.PUW: pushWord(getSource(iOp1,ed1)); break;
-		case itype.POB: setTarget(iOp1,popByte()); break;
-		case itype.POW: setTarget(iOp1,popWord()); break;
+		case itype.PUB: pushByte(getSource(_decoded1,_ed1)); break;
+		case itype.PUW: pushWord(getSource(_decoded1,_ed1)); break;
+		case itype.POB: setTarget(_decoded1,popByte()); break;
+		case itype.POW: setTarget(_decoded1,popWord()); break;
 
-		case itype.SUB: setTarget(iOp1,(getSource(iOp1)-getSource(iOp2))&0xffffffff); break;
-		case itype.SYS: sysCall(getSource(iOp1,ed1)); break;
-		//case itype.CAL: pushWord(hw_pc+4); hw_pc = getSource(iOp1,ed1); break;
+		case itype.SUB: setTarget(_decoded1,(getSource(_decoded1)-getSource(_decoded2))&0xffffffff); break;
+		case itype.SYS: sysCall(getSource(_decoded1,_ed1)); break;
+		//case itype.CAL: pushWord(hw_pc+4); hw_pc = getSource(_iOp1,_ed1); break;
 		case itype.CAL:
-			pushWord(hw_pc); hw_pc = ed1;
+			pushWord(hw_pc); hw_pc = _ed1;
 
 			break;
 		case itype.RET:
@@ -289,16 +304,16 @@ function tick()
 			break;
 		case itype.BRK: setFlag(break_flag,1); break;
 
-		case itype.AND: setTarget(iOp1,(getSource(iOp1,ed1)&getSource(iOp2,ed2))&0xffffffff); break;
-		case itype.OR: setTarget(iOp1,(getSource(iOp1,ed1)|getSource(iOp2,ed2))&0xffffffff); break;
-		case itype.XOR: setTarget(iOp1,(getSource(iOp1,ed1)^getSource(iOp2,ed2))&0xffffffff); break;
-		case itype.NOT: setTarget(iOp1,(~getSource(iOp1,ed1))&0xffffffff); break;
+		case itype.AND: setTarget(_decoded1,(getSource(_decoded1,_ed1)&getSource(_decoded2,_ed2))&0xffffffff); break;
+		case itype.OR: setTarget(_decoded1,(getSource(_decoded1,_ed1)|getSource(_decoded2,_ed2))&0xffffffff); break;
+		case itype.XOR: setTarget(_decoded1,(getSource(_decoded1,_ed1)^getSource(_decoded2,_ed2))&0xffffffff); break;
+		case itype.NOT: setTarget(_decoded1,(~getSource(_decoded1,_ed1))&0xffffffff); break;
 		case itype.TEST:
-			var result = getSource(iOp1,ed1) & getSource(iOp2,ed2);
+			_result = getSource(_decoded1,_ed1) & getSource(_decoded2,_ed2);
 			setFlag(zero_flag,0);
 			setFlag(sign_flag,0);
-			if (result===0) setFlag(zero_flag,1);
-			else if (result<0) setFlag(sign_flag,1);
+			if (_result===0) setFlag(zero_flag,1);
+			else if (_result<0) setFlag(sign_flag,1);
 			else setFlag(sign_flag,0);
 		 break;
 
@@ -306,17 +321,17 @@ function tick()
 		case itype.PUA: pushAll(); break;
 		case itype.POA: popAll(); break;
 		case itype.SHL:
-			//setTarget(iOp1,(getSource(iOp1,ed1)+getSource(iOp2,ed2))&0xffffffff);
-			val1  = getSource(iOp1,ed1);
-			var amount = getSource(iOp2,ed2);
-			if (0x80000000&val1>0) setFlag(carry_flag,1);
-			setTarget(iOp1, (val1<<amount)&0xffffffff, ed1);
+			//setTarget(_iOp1,(getSource(_iOp1,_ed1)+getSource(_iOp2,_ed2))&0xffffffff);
+			_val1  = getSource(_decoded1,_ed1);
+			_amount = getSource(_decoded2,_ed2);
+			if (0x80000000&_val1>0) setFlag(carry_flag,1);
+			setTarget(_decoded1, (_val1<<_amount)&0xffffffff, _ed1);
 			break;
 		case itype.SHR:
-			val1  = getSource(iOp1);
-			var amount = getSource(iOp2,ed2);
-			if (0x00000001&val1>0) setFlag(carry_flag,1);
-			setTarget(iOp1, (val1>>amount)&0xffffffff);
+			_val1  = getSource(_decoded1);
+			_amount = getSource(_decoded2,_ed2);
+			if (0x00000001&_val1>0) setFlag(carry_flag,1);
+			setTarget(_decoded1, (_val1>>_amount)&0xffffffff);
 			break;
 		case itype.CLC: setFlag(carry_flag,0); break;
 		case itype.CLZ: setFlag(zero_flag,0); break;
@@ -477,11 +492,11 @@ function getNextWord()
 
 
 // parametrised function to set a value at given target.
-function setTarget (op, val, addr)
+function setTarget (decoded, val, addr)
 {
 	"use strict";
 
-	var decoded = decodeOperator(op);
+	//var decoded = decodeOperator(op);
 	var regId = decoded[1];
 	switch (decoded[0]) {
 		case opTypes.REG:
@@ -507,9 +522,10 @@ function setTarget (op, val, addr)
 
 
 // parametrised function to get a value at given target.
-function getSource(op,val)
+function getSource(decoded,val)
 {
-	var decoded = decodeOperator(op);
+	
+	//var decoded = decodeOperator(op);
 	var regId = decoded[1];
 	switch (decoded[0]) {
 		case opTypes.REG:
