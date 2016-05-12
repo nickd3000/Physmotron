@@ -19,6 +19,10 @@ function webCompile()
 	//requestAnimationFrame(draw);
 	
 	webShowRegs();
+	
+	// Enable dumping
+	var dump = dumpCompiledProgram(code);
+	document.getElementById("output").value = dump;
 }
 
 

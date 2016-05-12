@@ -577,3 +577,29 @@ function parseOperand(operand, isWord)
 
 	return result;
 }
+
+
+// Output a comma seperated list of the entire program.
+function dumpCompiledProgram(bc) {
+	
+	var dump="";
+	var length = bc.length;
+	var pos=0;
+	var stop=false;
+	var subStr = "";
+	
+	while (stop==false) {
+		subStr="";
+		for (var i=0;i<16;i++) {
+			if (pos==length) {
+				stop=true;
+				break;
+			}
+			
+			subStr+=bc[pos++]+", ";
+		}
+		dump=dump+subStr+"\n";
+	}
+	
+	return dump;
+}
